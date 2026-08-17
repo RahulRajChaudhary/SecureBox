@@ -1,0 +1,183 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+import { app } from '../src/app.js';
+import { prisma } from '../src/lib/prisma.js';
+import { requireAuth } from '../src/middleware/requireAuth.js';
+import { signAccessToken } from '../src/lib/tokens.js';
+
+const credentials = { email: 'alice@example.com', password: 'correct-horse-battery' };
+
+describe('POST /api/auth/register', () => {
+  it('creates a user, returns an access token, and sets the refresh cookie', async () => {
+    const res = await request(app).post('/api/auth/register').send(credentials);
+
+    expect(res.status).toBe(201);
+    expect(res.body.accessToken).toEqual(expect.any(String));
+    expect(res.body.user).toEqual({ id: expect.any(String), email: credentials.email });
+    expect(res.headers['set-cookie'][0]).toMatch(/^refresh_token=/);
+  });
+
+  it('rejects a duplicate email with 409', async () => {
+    await request(app).post('/api/auth/register').send(credentials);
+    const res = await request(app).post('/api/auth/register').send(credentials);
+
+    expect(res.status).toBe(409);
+  });
+
+  it('rejects invalid input with 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'not-an-email', password: 'short' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('stores the password as an argon2 hash, not plaintext', async () => {
+    await request(app).post('/api/auth/register').send(credentials);
+    const stored = await prisma.user.findUniqueOrThrow({ where: { email: credentials.email } });
+
+    expect(stored.passwordHash).not.toBe(credentials.password);
+    expect(stored.passwordHash).toMatch(/^\$argon2/);
+  });
+});
+
+describe('POST /api/auth/login', () => {
+  beforeEach(async () => {
+    await request(app).post('/api/auth/register').send(credentials);
+  });
+
+  it('logs in with correct credentials', async () => {
+    const res = await request(app).post('/api/auth/login').send(credentials);
+
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toEqual(expect.any(String));
+  });
+
+  it('rejects a wrong password with 401', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ ...credentials, password: 'wrong-password' });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an unknown email with the same 401 shape as a wrong password', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'nobody@example.com', password: 'whatever1' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Invalid email or password');
+  });
+});
+
+describe('POST /api/auth/refresh', () => {
+  it('rejects a request with no refresh cookie', async () => {
+    const res = await request(app).post('/api/auth/refresh');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rotates the refresh cookie and returns a new access token', async () => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/register').send(credentials);
+
+    const res = await agent.post('/api/auth/refresh');
+
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toEqual(expect.any(String));
+    expect(res.headers['set-cookie'][0]).toMatch(/^refresh_token=/);
+  });
+
+  it('rejects reuse of an already-rotated refresh token', async () => {
+    const agent = request.agent(app);
+    const regRes = await agent.post('/api/auth/register').send(credentials);
+    const originalCookie = regRes.headers['set-cookie'];
+
+    await agent.post('/api/auth/refresh'); // rotates; agent jar now holds the new cookie
+
+    const reuseRes = await request(app).post('/api/auth/refresh').set('Cookie', originalCookie);
+
+    expect(reuseRes.status).toBe(401);
+  });
+
+  it('revokes the whole session family when a rotated token is reused', async () => {
+    const agent = request.agent(app);
+    const regRes = await agent.post('/api/auth/register').send(credentials);
+    const originalCookie = regRes.headers['set-cookie'];
+
+    await agent.post('/api/auth/refresh'); // legitimate rotation -> cookie A
+    await request(app).post('/api/auth/refresh').set('Cookie', originalCookie); // reuse -> revokes family
+
+    const res = await agent.post('/api/auth/refresh'); // cookie A should be dead too
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an expired session', async () => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/register').send(credentials);
+    await prisma.session.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });
+
+    const res = await agent.post('/api/auth/refresh');
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('POST /api/auth/logout', () => {
+  it('clears the refresh cookie and returns 204', async () => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/register').send(credentials);
+
+    const res = await agent.post('/api/auth/logout');
+
+    expect(res.status).toBe(204);
+  });
+
+  it('invalidates the refresh token so a subsequent refresh fails', async () => {
+    const agent = request.agent(app);
+    await agent.post('/api/auth/register').send(credentials);
+    await agent.post('/api/auth/logout');
+
+    const res = await agent.post('/api/auth/refresh');
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('requireAuth middleware', () => {
+  it('rejects a request with no Authorization header', () => {
+    const req = { headers: {} };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+
+    requireAuth(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid bearer token', () => {
+    const req = { headers: { authorization: 'Bearer not-a-real-token' } };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    const next = vi.fn();
+
+    requireAuth(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('accepts a valid access token and attaches req.userId', () => {
+    const token = signAccessToken({ id: 'user-123', email: 'a@b.com' });
+    const req = { headers: { authorization: `Bearer ${token}` } };
+    const res = {};
+    const next = vi.fn();
+
+    requireAuth(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(req.userId).toBe('user-123');
+  });
+});

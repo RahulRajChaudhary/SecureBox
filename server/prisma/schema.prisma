@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum FileStatus {
+  PENDING
+  UPLOADING
+  READY
+  FAILED
+  DELETING
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  files        File[]
+  sessions     Session[]
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model File {
+  id            String     @id @default(uuid())
+  ownerId       String
+  owner         User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  storageKey    String     @unique
+  originalName  String
+  mimeType      String
+  sizeBytes     BigInt
+  status        FileStatus @default(PENDING)
+  visibility    Visibility @default(PRIVATE)
+  shareSlug     String?    @unique
+  uploadId      String?
+  partSizeBytes Int?
+  totalParts    Int?
+  checksum      String?
+  deletedAt     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([ownerId, status, createdAt(sort: Desc)])
+  @@index([ownerId, deletedAt])
+}
