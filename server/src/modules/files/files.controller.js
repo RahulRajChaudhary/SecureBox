@@ -71,6 +71,11 @@ export async function trash(req, res) {
   res.json({ data: files.map(serializeTrashedFile) });
 }
 
+export async function usage(req, res) {
+  const { usedBytes } = await filesService.getUsage({ userId: req.userId });
+  res.json({ data: { usedBytes: usedBytes.toString() } });
+}
+
 export async function restore(req, res) {
   const file = await filesService.restoreFile({ fileId: req.params.id, userId: req.userId });
   res.json({ data: serializeFile(file) });

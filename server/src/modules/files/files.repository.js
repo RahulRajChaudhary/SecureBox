@@ -111,3 +111,11 @@ export async function findDeletingFiles(olderThanDays) {
     },
   });
 }
+
+export async function getUsageBytes(ownerId) {
+  const result = await prisma.file.aggregate({
+    where: { ownerId, status: 'READY', deletedAt: null },
+    _sum: { sizeBytes: true },
+  });
+  return result._sum.sizeBytes ?? 0n;
+}
