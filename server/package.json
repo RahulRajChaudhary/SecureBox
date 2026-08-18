@@ -10,8 +10,7 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "spike:upload": "node --env-file=.env scripts/day0-spike-upload.js"
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1111.0",
