@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
 import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
-import { authRouter } from './routes/auth.routes.js';
+import { authRouter } from './modules/auth/auth.routes.js';
 import { filesRouter } from './modules/files/files.routes.js';
 import { foldersRouter } from './modules/folders/folders.routes.js';
 import { shareRouter } from './modules/share/share.routes.js';
