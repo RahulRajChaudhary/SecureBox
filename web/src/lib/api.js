@@ -7,6 +7,7 @@ const AUTH_PATHS = new Set([
 
 let accessToken = null;
 let onUnauthorized = null;
+let refreshPromise = null;
 
 export function setAccessToken(token) {
   accessToken = token;
@@ -17,14 +18,24 @@ export function setUnauthorizedHandler(fn) {
 }
 
 export async function refreshAccessToken() {
-  const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
-  if (!res.ok) {
-    accessToken = null;
-    return null;
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+    if (!res.ok) {
+      accessToken = null;
+      return null;
+    }
+    const data = await res.json();
+    accessToken = data.accessToken;
+    return accessToken;
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
   }
-  const data = await res.json();
-  accessToken = data.accessToken;
-  return accessToken;
 }
 
 async function request(path, options = {}, retry = true) {
