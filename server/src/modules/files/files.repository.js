@@ -20,27 +20,36 @@ export async function findFileBySlug(shareSlug) {
   });
 }
 
-export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'createdAt_desc', folderId } = {}) {
-  const [sortField, sortDir] = sort.startsWith('name_') ? ['originalName', sort.slice(5)] : ['createdAt', sort.slice(10)];
-  const orderBy = sortField === 'originalName'
-    ? [{ originalName: sortDir }, { id: sortDir }]
-    : [{ createdAt: sortDir }, { id: sortDir }];
+export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'createdAt_desc', folderId, view } = {}) {
+  const isRecent = view === 'recent';
+  const [sortField, sortDir] = isRecent
+    ? ['updatedAt', 'desc']
+    : sort.startsWith('name_')
+      ? ['originalName', sort.slice(5)]
+      : ['createdAt', sort.slice(10)];
+  const orderBy = [{ [sortField]: sortDir }, { id: sortDir }];
 
   const where = {
     ownerId,
     deletedAt: null,
     status: 'READY',
-    // A search query spans the whole drive, like Google Drive's search —
-    // otherwise (no q) the listing is scoped to the current folder (null = root).
-    ...(q ? { originalName: { contains: q, mode: 'insensitive' } } : { folderId: folderId ?? null }),
+    // Search and "recent" both span the whole drive, like Google Drive's
+    // search and Recent views — otherwise the listing is scoped to the
+    // current folder (null = root).
+    ...(q
+      ? { originalName: { contains: q, mode: 'insensitive' } }
+      : isRecent
+        ? {}
+        : { folderId: folderId ?? null }),
   };
 
   if (cursor) {
     const [cursorValue, cursorId] = Buffer.from(cursor, 'base64url').toString('utf8').split('|');
     const op = sortDir === 'desc' ? 'lt' : 'gt';
+    const decodedValue = sortField === 'originalName' ? cursorValue : new Date(cursorValue);
     where.OR = [
-      { [sortField]: { [op]: sortField === 'createdAt' ? new Date(cursorValue) : cursorValue } },
-      { [sortField]: sortField === 'createdAt' ? new Date(cursorValue) : cursorValue, id: { [op]: cursorId } },
+      { [sortField]: { [op]: decodedValue } },
+      { [sortField]: decodedValue, id: { [op]: cursorId } },
     ];
   }
 
@@ -49,7 +58,9 @@ export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'c
   const files = hasMore ? rows.slice(0, limit) : rows;
   const last = files.at(-1);
   const nextCursor = hasMore
-    ? Buffer.from(`${sortField === 'createdAt' ? last.createdAt.toISOString() : last.originalName}|${last.id}`).toString('base64url')
+    ? Buffer.from(
+        `${sortField === 'originalName' ? last.originalName : last[sortField].toISOString()}|${last.id}`,
+      ).toString('base64url')
     : null;
 
   return { files, nextCursor };
