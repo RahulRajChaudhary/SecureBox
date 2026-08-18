@@ -3,6 +3,7 @@ import { RenameModal } from './RenameModal';
 import { DeleteConfirm } from './DeleteConfirm';
 import { PreviewModal } from './PreviewModal';
 import { MoveFileModal } from './MoveFileModal';
+import { InfoModal } from './InfoModal';
 
 export function FileActionModals({ file, actions }) {
   const {
@@ -10,6 +11,7 @@ export function FileActionModals({ file, actions }) {
     deleting, setDeleting,
     previewing, setPreviewing,
     moving, setMoving,
+    viewingInfo, setViewingInfo,
     isUpdating, isDeleting,
     handleRename, handleDelete,
   } = actions;
@@ -34,6 +36,7 @@ export function FileActionModals({ file, actions }) {
       )}
       {previewing && <PreviewModal file={file} onClose={() => setPreviewing(false)} />}
       {moving && <MoveFileModal file={file} onClose={() => setMoving(false)} />}
+      {viewingInfo && <InfoModal file={file} onClose={() => setViewingInfo(false)} />}
     </AnimatePresence>
   );
 }

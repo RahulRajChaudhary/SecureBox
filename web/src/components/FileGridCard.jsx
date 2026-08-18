@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, FolderInput, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Download, FolderInput, Globe, Info, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { formatBytes } from '../lib/format';
 import { useFileActions } from '../hooks/useFileActions';
 import { FileActionModals } from './FileActionModals';
@@ -13,6 +13,7 @@ export function FileGridCard({ file }) {
     isPublic, Icon,
     handleDownload, toggleVisibility,
     setRenaming, setDeleting, setMoving, setPreviewing,
+    setViewingInfo,
     isUpdating,
   } = actions;
 
@@ -54,6 +55,15 @@ export function FileGridCard({ file }) {
               style={{ transformOrigin: 'top right' }}
               className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl"
             >
+              <button
+                onClick={() => {
+                  setViewingInfo(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <Info size={14} /> Info
+              </button>
               <button
                 onClick={handleDownload}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"

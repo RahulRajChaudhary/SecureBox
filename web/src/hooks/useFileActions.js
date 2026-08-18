@@ -10,6 +10,7 @@ export function useFileActions(file) {
   const [deleting, setDeleting] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [viewingInfo, setViewingInfo] = useState(false);
   const menuRef = useRef(null);
   const updateFile = useUpdateFile();
   const deleteFile = useDeleteFile();
@@ -71,6 +72,7 @@ export function useFileActions(file) {
     deleting, setDeleting,
     previewing, setPreviewing,
     moving, setMoving,
+    viewingInfo, setViewingInfo,
     isPublic, Icon,
     isUpdating: updateFile.isPending,
     isDeleting: deleteFile.isPending,

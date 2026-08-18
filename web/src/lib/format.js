@@ -6,3 +6,11 @@ export function formatBytes(bytes) {
   const value = n / 1024 ** i;
   return `${i === 0 ? value : value.toFixed(1)} ${units[i]}`;
 }
+
+export function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
