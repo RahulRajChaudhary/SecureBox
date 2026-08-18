@@ -26,13 +26,14 @@ export function abortUpload(fileId) {
   return apiRequest(`/api/files/${fileId}/abort`, { method: 'POST' });
 }
 
-export function listFiles({ cursor, limit, q, sort, folderId } = {}) {
+export function listFiles({ cursor, limit, q, sort, folderId, view } = {}) {
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
   if (limit) params.set('limit', String(limit));
   if (q) params.set('q', q);
   if (sort) params.set('sort', sort);
   if (folderId) params.set('folderId', folderId);
+  if (view) params.set('view', view);
   const qs = params.toString();
   return apiRequest(`/api/files${qs ? `?${qs}` : ''}`);
 }

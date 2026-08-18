@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useFiles } from '../hooks/useFiles';
+import { useFileListing } from '../hooks/useFileListing';
 import { FileCard } from './FileCard';
 import { EmptyState } from './EmptyState';
 
@@ -21,28 +20,10 @@ function SkeletonRow({ delay }) {
   );
 }
 
-export function FileList({ q, sort, folderId }) {
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useFiles({
-    q,
-    sort,
-    folderId,
+export function FileList({ q, sort, folderId, view, emptyMessage }) {
+  const { files, isLoading, isError, hasNextPage, isFetchingNextPage, sentinelRef } = useFileListing({
+    q, sort, folderId, view,
   });
-
-  const sentinelRef = useRef(null);
-
-  useEffect(() => {
-    if (!hasNextPage) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading)
     return (
@@ -53,14 +34,7 @@ export function FileList({ q, sort, folderId }) {
       </div>
     );
   if (isError) return <p className="py-8 text-center text-sm text-red-400">Couldn't load files.</p>;
-
-  const files = data.pages.flatMap((page) => page.data);
-  if (files.length === 0)
-    return (
-      <EmptyState
-        message={q ? 'No files match your search.' : folderId ? 'This folder is empty.' : undefined}
-      />
-    );
+  if (files.length === 0) return <EmptyState message={emptyMessage} />;
 
   return (
     <div>
