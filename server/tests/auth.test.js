@@ -146,6 +146,49 @@ describe('POST /api/auth/logout', () => {
   });
 });
 
+describe('POST /api/auth/logout-all', () => {
+  it('requires authentication', async () => {
+    const res = await request(app).post('/api/auth/logout-all');
+
+    expect(res.status).toBe(401);
+  });
+
+  it('revokes every session for the user, across families', async () => {
+    const agent = request.agent(app);
+    const regRes = await agent.post('/api/auth/register').send(credentials);
+    const { accessToken, user } = regRes.body;
+
+    // A second "device": logging in again creates a second session family.
+    await request(app).post('/api/auth/login').send(credentials);
+
+    const res = await request(app)
+      .post('/api/auth/logout-all')
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(res.status).toBe(204);
+
+    const activeSessions = await prisma.session.count({
+      where: { userId: user.id, revokedAt: null },
+    });
+    expect(activeSessions).toBe(0);
+  });
+
+  it("does not revoke another user's sessions", async () => {
+    const regA = await request(app).post('/api/auth/register').send(credentials);
+
+    const otherCredentials = { email: 'bob@example.com', password: 'correct-horse-battery' };
+    const agentB = request.agent(app);
+    await agentB.post('/api/auth/register').send(otherCredentials);
+
+    await request(app)
+      .post('/api/auth/logout-all')
+      .set('Authorization', `Bearer ${regA.body.accessToken}`);
+
+    const refreshB = await agentB.post('/api/auth/refresh');
+    expect(refreshB.status).toBe(200);
+  });
+});
+
 describe('requireAuth middleware', () => {
   it('rejects a request with no Authorization header', () => {
     const req = { headers: {} };

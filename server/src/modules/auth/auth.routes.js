@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import { requireAuth } from '../../middleware/requireAuth.js';
 import { asyncHandler } from '../../lib/asyncHandler.js';
 import { env } from '../../config/env.js';
 import { LOGIN_RATE_LIMIT, REFRESH_RATE_LIMIT } from '../../config/rateLimits.js';
@@ -25,3 +26,4 @@ authRouter.post('/register', loginLimiter, asyncHandler(authController.register)
 authRouter.post('/login', loginLimiter, asyncHandler(authController.login));
 authRouter.post('/refresh', refreshLimiter, asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));
+authRouter.post('/logout-all', requireAuth, asyncHandler(authController.logoutAll));

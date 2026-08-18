@@ -108,3 +108,9 @@ export async function logout(req, res) {
   res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
   res.status(204).end();
 }
+
+export async function logoutAll(req, res) {
+  await authRepository.revokeAllUserSessions(req.userId);
+  res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+  res.status(204).end();
+}

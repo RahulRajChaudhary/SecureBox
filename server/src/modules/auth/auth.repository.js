@@ -37,3 +37,10 @@ export async function revokeSessionByTokenHash(tokenHash) {
     data: { revokedAt: new Date() },
   });
 }
+
+export async function revokeAllUserSessions(userId) {
+  return prisma.session.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}
