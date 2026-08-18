@@ -1,9 +1,10 @@
 node_modules/
 .env
 server/.env
+CLAUDE.md
+docs/
+.superpowers/
 web/.env.local
 dist/
 build/
 *.log
-CLAUDE.md
-docs/
