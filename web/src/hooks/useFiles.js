@@ -1,5 +1,5 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, updateFile, deleteFile } from '../lib/files';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { listFiles, updateFile, deleteFile, listTrash, restoreFile } from '../lib/files';
 
 export function useFiles({ q, sort } = {}) {
   return useInfiniteQuery({
@@ -22,6 +22,27 @@ export function useDeleteFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (fileId) => deleteFile(fileId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['files'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    },
+  });
+}
+
+export function useTrash() {
+  return useQuery({
+    queryKey: ['trash'],
+    queryFn: listTrash,
+  });
+}
+
+export function useRestoreFile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (fileId) => restoreFile(fileId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    },
   });
 }

@@ -3,6 +3,7 @@ export const PART_SIZE_MIN = 5 * 1024 * 1024; // 5 MB, S3 minimum
 export const PART_SIZE_DEFAULT = 10 * 1024 * 1024; // 10 MB default
 export const MAX_PARTS = 9500; // S3 caps at 10k, stay safe
 export const UPLOAD_EXPIRY_DAYS = 7; // matches S3 lifecycle rule
+export const TRASH_RETENTION_DAYS = 30; // soft-deleted files are restorable until the reconciler purges them
 export const PRESIGNED_URL_EXPIRES = 3600; // 1 hour for part upload
 export const DOWNLOAD_URL_EXPIRES = 60; // 60 seconds for download
 
@@ -27,6 +28,15 @@ export const BLOCKED_EXTENSIONS = new Set([
   '.exe', '.sh', '.bat', '.cmd', '.ps1', '.vbs', '.js', '.mjs',
   '.html', '.htm', '.svg', '.xml', '.php', '.py', '.rb', '.pl',
 ]);
+
+// Some browsers/OSes report a non-standard MIME type for a format that
+// does have a standard one — e.g. Windows Chrome reports .zip files as
+// application/x-zip-compressed instead of the standard application/zip.
+// Normalize these before checking ALLOWED_MIME_TYPES.
+export const MIME_TYPE_ALIASES = {
+  'application/x-zip-compressed': 'application/zip',
+  'application/x-zip': 'application/zip',
+};
 
 // Used only when the browser reports no MIME type (or a generic
 // octet-stream fallback) for a file whose extension we otherwise support.

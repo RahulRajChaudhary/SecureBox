@@ -69,6 +69,28 @@ export async function softDeleteFile(fileId, ownerId) {
   });
 }
 
+export async function findTrashedFile(fileId, ownerId) {
+  return prisma.file.findFirst({
+    where: { id: fileId, ownerId, status: 'DELETING', deletedAt: { not: null } },
+  });
+}
+
+export async function listTrashedFiles(ownerId) {
+  return prisma.file.findMany({
+    where: { ownerId, status: 'DELETING', deletedAt: { not: null } },
+    orderBy: [{ deletedAt: 'desc' }],
+  });
+}
+
+export async function restoreFile(fileId, ownerId) {
+  const { count } = await prisma.file.updateMany({
+    where: { id: fileId, ownerId, status: 'DELETING', deletedAt: { not: null } },
+    data: { deletedAt: null, status: 'READY' },
+  });
+  if (count === 0) return null;
+  return findOwnedFile(fileId, ownerId);
+}
+
 export async function findStalePendingFiles(olderThanDays) {
   return prisma.file.findMany({
     where: {
@@ -79,8 +101,11 @@ export async function findStalePendingFiles(olderThanDays) {
   });
 }
 
-export async function findDeletingFiles() {
+export async function findDeletingFiles(olderThanDays) {
   return prisma.file.findMany({
-    where: { status: 'DELETING', deletedAt: { not: null } },
+    where: {
+      status: 'DELETING',
+      deletedAt: { not: null, lt: new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000) },
+    },
   });
 }

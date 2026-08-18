@@ -102,13 +102,18 @@ export async function deleteObject({ storageKey }) {
   return s3.send(new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key: storageKey }));
 }
 
-export async function getPresignedDownloadUrl({ storageKey, filename }) {
+// disposition: 'attachment' forces Save As (used by the actual download
+// button); 'inline' lets the browser render it in place — required for
+// preview, since Chrome's built-in PDF viewer (and some browsers for
+// images/audio/video) silently refuses to render inline and just
+// re-triggers a download if it sees Content-Disposition: attachment.
+export async function getPresignedDownloadUrl({ storageKey, filename, disposition = 'attachment' }) {
   return getSignedUrl(
     s3,
     new GetObjectCommand({
       Bucket: env.S3_BUCKET,
       Key: storageKey,
-      ResponseContentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      ResponseContentDisposition: `${disposition}; filename*=UTF-8''${encodeURIComponent(filename)}`,
     }),
     { expiresIn: DOWNLOAD_URL_EXPIRES },
   );

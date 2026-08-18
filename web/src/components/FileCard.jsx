@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Download, Eye, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatBytes } from '../lib/format';
 import { downloadFile } from '../lib/files';
@@ -9,12 +9,14 @@ import { useUpdateFile, useDeleteFile } from '../hooks/useFiles';
 import { RenameModal } from './RenameModal';
 import { DeleteConfirm } from './DeleteConfirm';
 import { CopyLinkButton } from './CopyLinkButton';
+import { PreviewModal } from './PreviewModal';
 import { row, scaleIn, springy, quick } from '../lib/motion';
 
 export function FileCard({ file }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const menuRef = useRef(null);
   const updateFile = useUpdateFile();
   const deleteFile = useDeleteFile();
@@ -102,6 +104,15 @@ export function FileCard({ file }) {
 
       <motion.button
         whileTap={{ scale: 0.92 }}
+        onClick={() => setPreviewing(true)}
+        className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
+        title="Preview"
+      >
+        <Eye size={16} />
+      </motion.button>
+
+      <motion.button
+        whileTap={{ scale: 0.92 }}
         onClick={handleDownload}
         className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
         title="Download"
@@ -167,6 +178,7 @@ export function FileCard({ file }) {
             deleting={deleteFile.isPending}
           />
         )}
+        {previewing && <PreviewModal file={file} onClose={() => setPreviewing(false)} />}
       </AnimatePresence>
     </motion.div>
   );

@@ -2,7 +2,7 @@ import { CronJob } from 'cron';
 import { prisma } from '../lib/prisma.js';
 import * as filesRepo from '../modules/files/files.repository.js';
 import { abortMultipartUpload, deleteObject } from '../services/upload.service.js';
-import { UPLOAD_EXPIRY_DAYS } from '../config/upload.constants.js';
+import { UPLOAD_EXPIRY_DAYS, TRASH_RETENTION_DAYS } from '../config/upload.constants.js';
 import { logger } from '../lib/logger.js';
 
 // Postgres and S3 can't share a transaction, so this is what keeps them
@@ -36,7 +36,7 @@ async function reconcileStaleUploads() {
 }
 
 async function reconcileDeletedFiles() {
-  const deleting = await filesRepo.findDeletingFiles();
+  const deleting = await filesRepo.findDeletingFiles(TRASH_RETENTION_DAYS);
   for (const file of deleting) {
     try {
       await deleteObject({ storageKey: file.storageKey });

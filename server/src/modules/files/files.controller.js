@@ -15,6 +15,10 @@ function serializeFile(file) {
   };
 }
 
+function serializeTrashedFile(file) {
+  return { ...serializeFile(file), deletedAt: file.deletedAt };
+}
+
 export async function createIntent(req, res) {
   const body = intentSchema.parse(req.body);
   const { file, partUrls } = await filesService.createUploadIntent({ userId: req.userId, ...body });
@@ -61,7 +65,27 @@ export async function remove(req, res) {
   res.status(204).end();
 }
 
+export async function trash(req, res) {
+  const files = await filesService.listTrash({ userId: req.userId });
+  res.json({ data: files.map(serializeTrashedFile) });
+}
+
+export async function restore(req, res) {
+  const file = await filesService.restoreFile({ fileId: req.params.id, userId: req.userId });
+  res.json({ data: serializeFile(file) });
+}
+
 export async function download(req, res) {
   const { url } = await filesService.getDownloadUrl({ fileId: req.params.id, userId: req.userId });
   res.redirect(302, url);
+}
+
+export async function previewUrl(req, res) {
+  const { url } = await filesService.getPreviewUrl({ fileId: req.params.id, userId: req.userId });
+  res.json({ data: { url } });
+}
+
+export async function zipContents(req, res) {
+  const listing = await filesService.getZipContents({ fileId: req.params.id, userId: req.userId });
+  res.json({ data: listing });
 }

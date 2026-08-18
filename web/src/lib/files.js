@@ -44,18 +44,38 @@ export function deleteFile(fileId) {
   return apiRequest(`/api/files/${fileId}`, { method: 'DELETE' });
 }
 
+export function listTrash() {
+  return apiRequest('/api/files/trash');
+}
+
+export function restoreFile(fileId) {
+  return apiRequest(`/api/files/${fileId}/restore`, { method: 'POST' });
+}
+
+export function getZipContents(fileId) {
+  return apiRequest(`/api/files/${fileId}/preview/zip-contents`);
+}
+
+// Distinct from downloadFile()'s resolveFileUrl — this asks for an
+// inline-disposition URL so the browser renders the file in place
+// (iframe/img/video) instead of trying to download it.
+export function getPreviewUrl(fileId) {
+  return apiRequest(`/api/files/${fileId}/preview-url`).then((res) => res.data.url);
+}
+
 export function getShareMeta(slug) {
   return apiRequest(`/api/share/${slug}`);
 }
 
-// Downloads never buffer the file through JS memory. Fetch just resolves
-// the server's 302 to the presigned S3 URL, then the browser navigates
-// there natively — same trick the auth header requires since a plain
-// <a href> to /api/files/:id/download can't carry the bearer token.
+// Fetch just resolves the server's 302 to the presigned (attachment-
+// disposition) S3 URL — needed since a plain <a href> to
+// /api/files/:id/download can't carry the bearer token the endpoint
+// requires. Downloads never buffer the file through JS memory — the
+// browser navigates to the resolved URL natively.
 export async function downloadFile(fileId) {
   const res = await fetch(`/api/files/${fileId}/download`, {
     headers: { Authorization: `Bearer ${getAccessToken()}` },
   });
-  if (!res.ok) throw new Error('Download failed');
+  if (!res.ok) throw new Error('Could not resolve file URL');
   window.location.href = res.url;
 }

@@ -8,6 +8,7 @@ import {
   ALLOWED_MIME_TYPES,
   BLOCKED_EXTENSIONS,
   EXTENSION_MIME_FALLBACK,
+  MIME_TYPE_ALIASES,
 } from '../config/upload.constants.js';
 import { PayloadTooLargeError, UnsupportedMediaError } from '../lib/errors.js';
 import { getRangedBytes } from './upload.service.js';
@@ -42,8 +43,8 @@ export function validateFileIntent({ filename, sizeBytes, mimeType }) {
   // generic octet-stream fallback) for perfectly valid files — trust the
   // extension in that case rather than reject outright. This is only a
   // pre-filter for UX; sniffMimeType() re-checks real bytes after upload.
-  let effectiveMimeType = mimeType;
-  if (!mimeType || mimeType === 'application/octet-stream') {
+  let effectiveMimeType = MIME_TYPE_ALIASES[mimeType] ?? mimeType;
+  if (!effectiveMimeType || effectiveMimeType === 'application/octet-stream') {
     effectiveMimeType = EXTENSION_MIME_FALLBACK[ext] ?? mimeType;
   }
 

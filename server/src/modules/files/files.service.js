@@ -3,6 +3,7 @@ import path from 'node:path';
 import { nanoid } from 'nanoid';
 import * as filesRepo from './files.repository.js';
 import { validateFileIntent, computePartSize, sniffMimeType } from '../../services/storage.service.js';
+import { getZipListing } from '../../services/zip.service.js';
 import {
   createMultipartUpload,
   signPartUrls,
@@ -159,6 +160,39 @@ export async function deleteFile({ fileId, userId }) {
   const file = await filesRepo.findOwnedFile(fileId, userId);
   if (!file) throw new NotFoundError();
   await filesRepo.softDeleteFile(fileId, userId);
+}
+
+export async function getPreviewUrl({ fileId, userId }) {
+  const file = await filesRepo.findOwnedFile(fileId, userId);
+  if (!file) throw new NotFoundError();
+  if (file.status !== 'READY') throw new ConflictError('File not ready', 'FILE_NOT_READY');
+
+  const url = await getPresignedDownloadUrl({
+    storageKey: file.storageKey,
+    filename: file.originalName,
+    disposition: 'inline',
+  });
+  return { url };
+}
+
+export async function getZipContents({ fileId, userId }) {
+  const file = await filesRepo.findOwnedFile(fileId, userId);
+  if (!file) throw new NotFoundError();
+  if (file.status !== 'READY') throw new ConflictError('File not ready', 'FILE_NOT_READY');
+  if (file.mimeType !== 'application/zip') {
+    throw new ConflictError('Not a zip file', 'NOT_A_ZIP');
+  }
+  return getZipListing({ storageKey: file.storageKey, sizeBytes: file.sizeBytes });
+}
+
+export async function listTrash({ userId }) {
+  return filesRepo.listTrashedFiles(userId);
+}
+
+export async function restoreFile({ fileId, userId }) {
+  const file = await filesRepo.findTrashedFile(fileId, userId);
+  if (!file) throw new NotFoundError();
+  return filesRepo.restoreFile(fileId, userId);
 }
 
 export async function listFiles({ userId, cursor, limit, q, sort }) {
