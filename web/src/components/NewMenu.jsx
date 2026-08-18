@@ -14,8 +14,15 @@ export function NewMenu({ onNewFolder, onUploadFiles }) {
     function handlePointer(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
     }
+    function handleKey(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('mousedown', handlePointer);
-    return () => document.removeEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [open]);
 
   return (
