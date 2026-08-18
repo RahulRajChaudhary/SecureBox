@@ -7,6 +7,7 @@ import { logger } from '../lib/logger.js';
 
 // Postgres and S3 can't share a transaction, so this is what keeps them
 // eventually consistent for the two ways they can diverge.
+
 export function startReconciler() {
   return new CronJob(
     '0 * * * *', // hourly
