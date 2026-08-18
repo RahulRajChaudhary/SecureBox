@@ -66,8 +66,10 @@ export function FileCard({ file, isLast = false }) {
               animate="animate"
               exit="exit"
               transition={quick}
-              style={{ transformOrigin: 'top right' }}
-              className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl"
+              style={{ transformOrigin: isLast ? 'bottom right' : 'top right' }}
+              className={`absolute right-0 z-10 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl ${
+                isLast ? 'bottom-full mb-1' : 'mt-1'
+              }`}
             >
               <button
                 onClick={() => {

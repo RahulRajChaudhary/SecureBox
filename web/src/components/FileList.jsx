@@ -43,8 +43,8 @@ export function FileList({ q, sort, folderId, view, emptyMessage }) {
       </p>
       <div className="overflow-hidden rounded-lg border border-edge bg-surface">
         <AnimatePresence initial={false}>
-          {files.map((file) => (
-            <FileCard key={file.id} file={file} />
+          {files.map((file, index) => (
+            <FileCard key={file.id} file={file} isLast={index === files.length - 1} />
           ))}
         </AnimatePresence>
         {hasNextPage && (
