@@ -1,28 +1,51 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { FolderPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Layout } from '../components/Layout';
-import { UploadZone } from '../components/UploadZone';
 import { UploadQueue } from '../components/UploadQueue';
 import { FileList } from '../components/FileList';
+import { FileGrid } from '../components/FileGrid';
 import { FolderList } from '../components/FolderList';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { NewFolderModal } from '../components/NewFolderModal';
 import { TrashList } from '../components/TrashList';
+import { ViewToggle } from '../components/ViewToggle';
+import { DropOverlay } from '../components/DropOverlay';
 import { useCreateFolder } from '../hooks/useFolders';
+import { useUploadFiles } from '../hooks/useUploadFiles';
+
+const VIEW_MODE_KEY = 'securebox:viewMode';
+
+function readViewMode() {
+  const stored = typeof window !== 'undefined' ? window.localStorage.getItem(VIEW_MODE_KEY) : null;
+  return stored === 'list' ? 'list' : 'grid';
+}
 
 export function Dashboard() {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('createdAt_desc');
-  const [tab, setTab] = useState('files'); // 'files' | 'trash'
+  const [nav, setNav] = useState('files'); // 'files' | 'recent' | 'trash'
   const [folderId, setFolderId] = useState(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [viewMode, setViewMode] = useState(readViewMode);
   const createFolder = useCreateFolder();
+
+  useEffect(() => {
+    window.localStorage.setItem(VIEW_MODE_KEY, viewMode);
+  }, [viewMode]);
+
+  const effectiveFolderId = nav === 'files' ? folderId : null;
+  const uploadFiles = useUploadFiles(effectiveFolderId);
+
+  function handleNavChange(next) {
+    setNav(next);
+    setQ('');
+    if (next === 'files') setFolderId(null);
+  }
 
   function handleCreateFolder(name) {
     createFolder.mutate(
-      { name, parentId: folderId },
+      { name, parentId: effectiveFolderId },
       {
         onSuccess: () => setCreatingFolder(false),
         onError: () => toast.error('Could not create folder'),
@@ -30,80 +53,75 @@ export function Dashboard() {
     );
   }
 
+  const listProps = {
+    q,
+    sort,
+    folderId: nav === 'files' ? folderId : undefined,
+    view: nav === 'recent' ? 'recent' : undefined,
+    emptyMessage: q
+      ? 'No files match your search.'
+      : nav === 'recent'
+        ? 'Nothing here yet — recently used files show up here.'
+        : folderId
+          ? 'This folder is empty.'
+          : undefined,
+  };
+
   return (
-    <Layout>
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-1 border-b border-edge">
-          {[
-            ['files', 'Your files'],
-            ['trash', 'Trash'],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              onClick={() => setTab(value)}
-              className={`-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors ${
-                tab === value
-                  ? 'border-accent text-ink'
-                  : 'border-transparent text-muted hover:text-ink'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+    <Layout
+      nav={nav}
+      onNavChange={handleNavChange}
+      q={q}
+      onQChange={setQ}
+      onNewFolder={() => setCreatingFolder(true)}
+      onUploadFiles={uploadFiles}
+    >
+      <DropOverlay onDrop={uploadFiles}>
+        <div className="flex flex-col gap-6">
+          <UploadQueue />
 
-        {tab === 'files' ? (
-          <>
-            <UploadZone folderId={folderId} />
-            <UploadQueue />
+          {nav === 'trash' ? (
+            <TrashList />
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                {nav === 'files' ? (
+                  <Breadcrumb folderId={folderId} onNavigate={setFolderId} />
+                ) : (
+                  <h1 className="text-sm font-medium text-ink">Recent</h1>
+                )}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    className="rounded-md border border-edge bg-surface px-2 py-1.5 text-sm text-muted outline-none transition-colors focus:border-accent"
+                  >
+                    <option value="createdAt_desc">Newest first</option>
+                    <option value="createdAt_asc">Oldest first</option>
+                    <option value="name_asc">Name A–Z</option>
+                    <option value="name_desc">Name Z–A</option>
+                  </select>
+                  <ViewToggle mode={viewMode} onChange={setViewMode} />
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <Breadcrumb folderId={folderId} onNavigate={setFolderId} />
-              <button
-                onClick={() => setCreatingFolder(true)}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-sm text-muted transition-colors hover:bg-surface2 hover:text-ink"
-              >
-                <FolderPlus size={15} />
-                New folder
-              </button>
-            </div>
+              {nav === 'files' && !q && <FolderList parentId={folderId} onOpen={setFolderId} />}
 
-            <div className="flex items-center justify-between gap-3">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search files…"
-                className="w-full max-w-xs rounded-md border border-edge bg-surface px-3 py-1.5 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
+              {viewMode === 'grid' ? <FileGrid {...listProps} /> : <FileList {...listProps} />}
+            </>
+          )}
+
+          <AnimatePresence>
+            {creatingFolder && (
+              <NewFolderModal
+                onSave={handleCreateFolder}
+                onClose={() => setCreatingFolder(false)}
+                saving={createFolder.isPending}
               />
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="rounded-md border border-edge bg-surface px-2 py-1.5 text-sm text-muted outline-none transition-colors focus:border-accent"
-              >
-                <option value="createdAt_desc">Newest first</option>
-                <option value="createdAt_asc">Oldest first</option>
-                <option value="name_asc">Name A–Z</option>
-                <option value="name_desc">Name Z–A</option>
-              </select>
-            </div>
-
-            {!q && <FolderList parentId={folderId} onOpen={setFolderId} />}
-            <FileList q={q} sort={sort} folderId={folderId} />
-
-            <AnimatePresence>
-              {creatingFolder && (
-                <NewFolderModal
-                  onSave={handleCreateFolder}
-                  onClose={() => setCreatingFolder(false)}
-                  saving={createFolder.isPending}
-                />
-              )}
-            </AnimatePresence>
-          </>
-        ) : (
-          <TrashList />
-        )}
-      </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </DropOverlay>
     </Layout>
   );
 }

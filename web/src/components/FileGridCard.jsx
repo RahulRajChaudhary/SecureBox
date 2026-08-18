@@ -1,75 +1,47 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Eye, FolderInput, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Download, FolderInput, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { formatBytes } from '../lib/format';
 import { useFileActions } from '../hooks/useFileActions';
 import { FileActionModals } from './FileActionModals';
 import { CopyLinkButton } from './CopyLinkButton';
-import { row, scaleIn, springy, quick } from '../lib/motion';
+import { scaleIn, springy, quick } from '../lib/motion';
 
-export function FileCard({ file }) {
+export function FileGridCard({ file }) {
   const actions = useFileActions(file);
   const {
     menuOpen, setMenuOpen, menuRef,
     isPublic, Icon,
     handleDownload, toggleVisibility,
-    setRenaming, setDeleting, setPreviewing, setMoving,
+    setRenaming, setDeleting, setMoving, setPreviewing,
     isUpdating,
   } = actions;
 
   return (
     <motion.div
       layout
-      variants={row}
+      variants={scaleIn}
       initial="initial"
       animate="animate"
       exit="exit"
       transition={springy}
-      className="flex items-center gap-2 border-b border-edge px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3"
+      className="group relative flex flex-col gap-2 rounded-lg border border-edge bg-surface p-3 hover:bg-surface2"
     >
-      <Icon size={18} className="shrink-0 text-muted" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-sm font-medium text-ink">{file.originalName}</p>
-        <p className="font-mono text-xs text-muted">{formatBytes(file.sizeBytes)}</p>
-      </div>
-
-      <button
-        onClick={toggleVisibility}
-        disabled={isUpdating}
-        className={`flex items-center gap-1 rounded-md p-2 text-xs transition-colors hover:bg-surface2 sm:px-2 sm:py-1 ${
-          isPublic ? 'text-warn' : 'text-muted'
-        }`}
-        title={isPublic ? 'Public — click to make private' : 'Private — click to make public'}
-      >
-        {isPublic ? <Globe size={14} /> : <Lock size={14} />}
-        <span className="hidden sm:inline">{isPublic ? 'Public' : 'Private'}</span>
+      <button onClick={() => setPreviewing(true)} className="flex flex-col items-center gap-2 py-4">
+        <Icon size={32} className="text-muted" />
+        <p className="w-full truncate text-center font-mono text-xs font-medium text-ink">{file.originalName}</p>
       </button>
 
-      {isPublic && file.shareSlug && <CopyLinkButton slug={file.shareSlug} />}
+      <div className="flex items-center justify-between text-xs text-muted">
+        <span className="font-mono">{formatBytes(file.sizeBytes)}</span>
+        {isPublic && <Globe size={13} className="text-warn" />}
+      </div>
 
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        onClick={() => setPreviewing(true)}
-        className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
-        title="Preview"
-      >
-        <Eye size={16} />
-      </motion.button>
-
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        onClick={handleDownload}
-        className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
-        title="Download"
-      >
-        <Download size={16} />
-      </motion.button>
-
-      <div className="relative" ref={menuRef}>
+      <div className="absolute right-2 top-2" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
+          className="rounded-md bg-surface p-1.5 text-muted opacity-0 transition-opacity hover:bg-surface2 hover:text-ink group-hover:opacity-100"
         >
-          <MoreVertical size={16} />
+          <MoreVertical size={15} />
         </button>
         <AnimatePresence>
           {menuOpen && (
@@ -82,6 +54,25 @@ export function FileCard({ file }) {
               style={{ transformOrigin: 'top right' }}
               className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl"
             >
+              <button
+                onClick={handleDownload}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <Download size={14} /> Download
+              </button>
+              <button
+                onClick={toggleVisibility}
+                disabled={isUpdating}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                {isPublic ? <Lock size={14} /> : <Globe size={14} />}
+                {isPublic ? 'Make private' : 'Make public'}
+              </button>
+              {isPublic && file.shareSlug && (
+                <div className="px-1">
+                  <CopyLinkButton slug={file.shareSlug} />
+                </div>
+              )}
               <button
                 onClick={() => {
                   setRenaming(true);

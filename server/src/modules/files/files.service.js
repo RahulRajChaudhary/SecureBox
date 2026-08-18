@@ -215,6 +215,11 @@ export async function restoreFile({ fileId, userId }) {
   return filesRepo.restoreFile(fileId, userId);
 }
 
-export async function listFiles({ userId, cursor, limit, q, sort, folderId }) {
-  return filesRepo.listOwnedFiles(userId, { cursor, limit, q, sort, folderId });
+export async function listFiles({ userId, cursor, limit, q, sort, folderId, view }) {
+  return filesRepo.listOwnedFiles(userId, { cursor, limit, q, sort, folderId, view });
+}
+
+export async function getUsage({ userId }) {
+  const usedBytes = await filesRepo.getUsageBytes(userId);
+  return { usedBytes };
 }

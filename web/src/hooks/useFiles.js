@@ -1,10 +1,10 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { listFiles, updateFile, deleteFile, listTrash, restoreFile } from '../lib/files';
+import { listFiles, updateFile, deleteFile, listTrash, restoreFile, getUsage } from '../lib/files';
 
-export function useFiles({ q, sort, folderId } = {}) {
+export function useFiles({ q, sort, folderId, view } = {}) {
   return useInfiniteQuery({
-    queryKey: ['files', { q, sort, folderId }],
-    queryFn: ({ pageParam }) => listFiles({ cursor: pageParam, q, sort, folderId }),
+    queryKey: ['files', { q, sort, folderId, view }],
+    queryFn: ({ pageParam }) => listFiles({ cursor: pageParam, q, sort, folderId, view }),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
@@ -25,6 +25,7 @@ export function useDeleteFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
+      queryClient.invalidateQueries({ queryKey: ['usage'] });
     },
   });
 }
@@ -43,6 +44,15 @@ export function useRestoreFile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
+      queryClient.invalidateQueries({ queryKey: ['usage'] });
     },
+  });
+}
+
+export function useUsage() {
+  return useQuery({
+    queryKey: ['usage'],
+    queryFn: getUsage,
+    staleTime: 60_000,
   });
 }

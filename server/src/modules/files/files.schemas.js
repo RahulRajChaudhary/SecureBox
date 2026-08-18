@@ -27,4 +27,5 @@ export const listSchema = z.object({
   q: z.string().optional(),
   sort: z.enum(['createdAt_desc', 'createdAt_asc', 'name_asc', 'name_desc']).default('createdAt_desc'),
   folderId: z.string().uuid().optional(),
+  view: z.enum(['recent']).optional(),
 });
