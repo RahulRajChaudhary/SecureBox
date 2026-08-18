@@ -3,7 +3,6 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
-import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { filesRouter } from './modules/files/files.routes.js';
@@ -25,14 +24,7 @@ app.use(
   }),
 );
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: () => env.NODE_ENV === 'test',
-});
-app.use('/api/auth', authLimiter, authRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/folders', foldersRouter);
 app.use('/api/share', shareRouter);
