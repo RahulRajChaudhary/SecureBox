@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { FolderOpen } from 'lucide-react';
 
-export function EmptyState({ message = 'No files yet — drop one above to get started.' }) {
+export function EmptyState({ message = 'No files yet.' }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-edge py-16 text-muted">
       <motion.div

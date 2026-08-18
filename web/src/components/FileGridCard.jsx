@@ -13,6 +13,7 @@ export function FileGridCard({ file }) {
     isPublic, Icon,
     handleDownload, toggleVisibility,
     setRenaming, setDeleting, setMoving, setPreviewing,
+    isUpdating,
   } = actions;
 
   return (
@@ -61,6 +62,7 @@ export function FileGridCard({ file }) {
               </button>
               <button
                 onClick={toggleVisibility}
+                disabled={isUpdating}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
               >
                 {isPublic ? <Lock size={14} /> : <Globe size={14} />}
