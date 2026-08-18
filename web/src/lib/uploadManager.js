@@ -43,8 +43,9 @@ function sleep(ms) {
 // retries transient failures, and supports pause/resume across a page
 // reload as long as the fileId is kept.
 export class UploadManager {
-  constructor(file, { onProgress, onStatusChange } = {}) {
+  constructor(file, { onProgress, onStatusChange, folderId } = {}) {
     this.file = file;
+    this.folderId = folderId ?? null;
     this.onProgress = onProgress ?? (() => {});
     this.onStatusChange = onStatusChange ?? (() => {});
 
@@ -74,6 +75,7 @@ export class UploadManager {
       filename: this.file.name,
       sizeBytes: this.file.size,
       mimeType: this.file.type || 'application/octet-stream',
+      folderId: this.folderId,
     });
     this.fileId = data.fileId;
     this.partSize = data.partSize;

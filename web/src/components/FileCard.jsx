@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Eye, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Download, Eye, FolderInput, Globe, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatBytes } from '../lib/format';
 import { downloadFile } from '../lib/files';
@@ -10,6 +10,7 @@ import { RenameModal } from './RenameModal';
 import { DeleteConfirm } from './DeleteConfirm';
 import { CopyLinkButton } from './CopyLinkButton';
 import { PreviewModal } from './PreviewModal';
+import { MoveFileModal } from './MoveFileModal';
 import { row, scaleIn, springy, quick } from '../lib/motion';
 
 export function FileCard({ file }) {
@@ -17,6 +18,7 @@ export function FileCard({ file }) {
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [moving, setMoving] = useState(false);
   const menuRef = useRef(null);
   const updateFile = useUpdateFile();
   const deleteFile = useDeleteFile();
@@ -149,6 +151,15 @@ export function FileCard({ file }) {
               </button>
               <button
                 onClick={() => {
+                  setMoving(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <FolderInput size={14} /> Move to
+              </button>
+              <button
+                onClick={() => {
                   setDeleting(true);
                   setMenuOpen(false);
                 }}
@@ -179,6 +190,7 @@ export function FileCard({ file }) {
           />
         )}
         {previewing && <PreviewModal file={file} onClose={() => setPreviewing(false)} />}
+        {moving && <MoveFileModal file={file} onClose={() => setMoving(false)} />}
       </AnimatePresence>
     </motion.div>
   );

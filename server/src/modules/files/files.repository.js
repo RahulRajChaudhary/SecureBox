@@ -20,7 +20,7 @@ export async function findFileBySlug(shareSlug) {
   });
 }
 
-export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'createdAt_desc' } = {}) {
+export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'createdAt_desc', folderId } = {}) {
   const [sortField, sortDir] = sort.startsWith('name_') ? ['originalName', sort.slice(5)] : ['createdAt', sort.slice(10)];
   const orderBy = sortField === 'originalName'
     ? [{ originalName: sortDir }, { id: sortDir }]
@@ -30,7 +30,9 @@ export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'c
     ownerId,
     deletedAt: null,
     status: 'READY',
-    ...(q ? { originalName: { contains: q, mode: 'insensitive' } } : {}),
+    // A search query spans the whole drive, like Google Drive's search —
+    // otherwise (no q) the listing is scoped to the current folder (null = root).
+    ...(q ? { originalName: { contains: q, mode: 'insensitive' } } : { folderId: folderId ?? null }),
   };
 
   if (cursor) {

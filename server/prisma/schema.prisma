@@ -26,6 +26,7 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   files        File[]
+  folders      Folder[]
   sessions     Session[]
 }
 
@@ -60,10 +61,28 @@ model File {
   partSizeBytes Int?
   totalParts    Int?
   checksum      String?
+  folderId      String?
+  folder        Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
   deletedAt     DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
   @@index([ownerId, status, createdAt(sort: Desc)])
   @@index([ownerId, deletedAt])
+  @@index([ownerId, folderId, status, createdAt(sort: Desc)])
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name      String
+  parentId  String?
+  parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderHierarchy")
+  files     File[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId, parentId])
 }

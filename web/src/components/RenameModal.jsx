@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
 
-export function RenameModal({ initialName, onSave, onClose, saving }) {
+export function RenameModal({ initialName, onSave, onClose, saving, title = 'Rename file' }) {
   const [name, setName] = useState(initialName);
 
   function handleSubmit(e) {
@@ -28,7 +28,7 @@ export function RenameModal({ initialName, onSave, onClose, saving }) {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-lg border border-edge bg-surface p-5 shadow-2xl"
       >
-        <h2 className="mb-3 text-sm font-semibold text-ink">Rename file</h2>
+        <h2 className="mb-3 text-sm font-semibold text-ink">{title}</h2>
         <input
           autoFocus
           value={name}

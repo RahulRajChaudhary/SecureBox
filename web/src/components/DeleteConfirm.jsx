@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
 
-export function DeleteConfirm({ name, onConfirm, onClose, deleting }) {
+export function DeleteConfirm({ name, onConfirm, onClose, deleting, title = 'Delete file', message }) {
   return (
     <motion.div
       variants={backdropFade}
@@ -18,10 +18,14 @@ export function DeleteConfirm({ name, onConfirm, onClose, deleting }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-lg border border-edge bg-surface p-5 shadow-2xl"
       >
-        <h2 className="mb-2 text-sm font-semibold text-ink">Delete file</h2>
+        <h2 className="mb-2 text-sm font-semibold text-ink">{title}</h2>
         <p className="text-sm text-muted">
-          Delete <span className="font-mono font-medium text-ink">{name}</span>? This can't be
-          undone.
+          {message ?? (
+            <>
+              Delete <span className="font-mono font-medium text-ink">{name}</span>? This can't be
+              undone.
+            </>
+          )}
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <button

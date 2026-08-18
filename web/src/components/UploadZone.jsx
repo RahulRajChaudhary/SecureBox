@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { UploadManager } from '../lib/uploadManager';
 import { useUploadStore, managers } from '../lib/uploadStore';
 
-export function UploadZone() {
+export function UploadZone({ folderId = null }) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
   const addUpload = useUploadStore((s) => s.addUpload);
@@ -17,6 +17,7 @@ export function UploadZone() {
     (file) => {
       const id = addUpload(file);
       const manager = new UploadManager(file, {
+        folderId,
         onProgress: (uploadedBytes, totalBytes) => updateUpload(id, { uploadedBytes, totalBytes }),
         onStatusChange: (status, extra) => {
           updateUpload(id, { status });
@@ -36,7 +37,7 @@ export function UploadZone() {
         toast.error(`${file.name} failed to upload`);
       });
     },
-    [addUpload, updateUpload, queryClient],
+    [addUpload, updateUpload, queryClient, folderId],
   );
 
   function handleFiles(fileList) {

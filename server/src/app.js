@@ -7,6 +7,7 @@ import { rateLimit } from 'express-rate-limit';
 import { env } from './config/env.js';
 import { authRouter } from './routes/auth.routes.js';
 import { filesRouter } from './modules/files/files.routes.js';
+import { foldersRouter } from './modules/folders/folders.routes.js';
 import { shareRouter } from './modules/share/share.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -32,6 +33,7 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/folders', foldersRouter);
 app.use('/api/share', shareRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

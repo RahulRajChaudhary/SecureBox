@@ -11,6 +11,7 @@ function serializeFile(file) {
     status: file.status,
     visibility: file.visibility,
     shareSlug: file.shareSlug,
+    folderId: file.folderId,
     createdAt: file.createdAt,
   };
 }

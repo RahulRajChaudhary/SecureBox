@@ -1,14 +1,34 @@
 import { useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { FolderPlus } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Layout } from '../components/Layout';
 import { UploadZone } from '../components/UploadZone';
 import { UploadQueue } from '../components/UploadQueue';
 import { FileList } from '../components/FileList';
+import { FolderList } from '../components/FolderList';
+import { Breadcrumb } from '../components/Breadcrumb';
+import { NewFolderModal } from '../components/NewFolderModal';
 import { TrashList } from '../components/TrashList';
+import { useCreateFolder } from '../hooks/useFolders';
 
 export function Dashboard() {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('createdAt_desc');
   const [tab, setTab] = useState('files'); // 'files' | 'trash'
+  const [folderId, setFolderId] = useState(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const createFolder = useCreateFolder();
+
+  function handleCreateFolder(name) {
+    createFolder.mutate(
+      { name, parentId: folderId },
+      {
+        onSuccess: () => setCreatingFolder(false),
+        onError: () => toast.error('Could not create folder'),
+      },
+    );
+  }
 
   return (
     <Layout>
@@ -34,8 +54,19 @@ export function Dashboard() {
 
         {tab === 'files' ? (
           <>
-            <UploadZone />
+            <UploadZone folderId={folderId} />
             <UploadQueue />
+
+            <div className="flex items-center justify-between gap-3">
+              <Breadcrumb folderId={folderId} onNavigate={setFolderId} />
+              <button
+                onClick={() => setCreatingFolder(true)}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-sm text-muted transition-colors hover:bg-surface2 hover:text-ink"
+              >
+                <FolderPlus size={15} />
+                New folder
+              </button>
+            </div>
 
             <div className="flex items-center justify-between gap-3">
               <input
@@ -56,7 +87,18 @@ export function Dashboard() {
               </select>
             </div>
 
-            <FileList q={q} sort={sort} />
+            {!q && <FolderList parentId={folderId} onOpen={setFolderId} />}
+            <FileList q={q} sort={sort} folderId={folderId} />
+
+            <AnimatePresence>
+              {creatingFolder && (
+                <NewFolderModal
+                  onSave={handleCreateFolder}
+                  onClose={() => setCreatingFolder(false)}
+                  saving={createFolder.isPending}
+                />
+              )}
+            </AnimatePresence>
           </>
         ) : (
           <TrashList />

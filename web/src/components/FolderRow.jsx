@@ -1,0 +1,136 @@
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Folder, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useUpdateFolder, useDeleteFolder } from '../hooks/useFolders';
+import { RenameModal } from './RenameModal';
+import { DeleteConfirm } from './DeleteConfirm';
+import { row, scaleIn, springy, quick } from '../lib/motion';
+
+export function FolderRow({ folder, onOpen }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef(null);
+  const updateFolder = useUpdateFolder();
+  const deleteFolder = useDeleteFolder();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handlePointer(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    }
+    function handleKey(e) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [menuOpen]);
+
+  function handleRename(name) {
+    updateFolder.mutate(
+      { folderId: folder.id, patch: { name } },
+      {
+        onSuccess: () => setRenaming(false),
+        onError: () => toast.error('Rename failed'),
+      },
+    );
+  }
+
+  function handleDelete() {
+    deleteFolder.mutate(folder.id, {
+      onSuccess: () => toast.success('Folder deleted'),
+      onError: (err) =>
+        toast.error(err.code === 'FOLDER_NOT_EMPTY' ? 'Folder is not empty' : 'Delete failed'),
+    });
+  }
+
+  return (
+    <motion.div
+      layout
+      variants={row}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={springy}
+      className="flex items-center gap-2 border-b border-edge px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3"
+    >
+      <button onClick={() => onOpen(folder.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <Folder size={18} className="shrink-0 text-accent" />
+        <p className="truncate font-mono text-sm font-medium text-ink">{folder.name}</p>
+      </button>
+
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
+        >
+          <MoreVertical size={16} />
+        </button>
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              variants={scaleIn}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={quick}
+              style={{ transformOrigin: 'top right' }}
+              className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl"
+            >
+              <button
+                onClick={() => {
+                  setRenaming(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <Pencil size={14} /> Rename
+              </button>
+              <button
+                onClick={() => {
+                  setDeleting(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-red-400 hover:bg-red-500/10"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence>
+        {renaming && (
+          <RenameModal
+            title="Rename folder"
+            initialName={folder.name}
+            onSave={handleRename}
+            onClose={() => setRenaming(false)}
+            saving={updateFolder.isPending}
+          />
+        )}
+        {deleting && (
+          <DeleteConfirm
+            title="Delete folder"
+            name={folder.name}
+            message={
+              <>
+                Delete <span className="font-mono font-medium text-ink">{folder.name}</span>? The
+                folder must be empty.
+              </>
+            }
+            onConfirm={handleDelete}
+            onClose={() => setDeleting(false)}
+            deleting={deleteFolder.isPending}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}

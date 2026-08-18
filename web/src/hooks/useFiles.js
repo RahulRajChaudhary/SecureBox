@@ -1,10 +1,10 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { listFiles, updateFile, deleteFile, listTrash, restoreFile } from '../lib/files';
 
-export function useFiles({ q, sort } = {}) {
+export function useFiles({ q, sort, folderId } = {}) {
   return useInfiniteQuery({
-    queryKey: ['files', { q, sort }],
-    queryFn: ({ pageParam }) => listFiles({ cursor: pageParam, q, sort }),
+    queryKey: ['files', { q, sort, folderId }],
+    queryFn: ({ pageParam }) => listFiles({ cursor: pageParam, q, sort, folderId }),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });

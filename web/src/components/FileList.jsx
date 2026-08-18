@@ -21,10 +21,11 @@ function SkeletonRow({ delay }) {
   );
 }
 
-export function FileList({ q, sort }) {
+export function FileList({ q, sort, folderId }) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useFiles({
     q,
     sort,
+    folderId,
   });
 
   const sentinelRef = useRef(null);
@@ -54,7 +55,12 @@ export function FileList({ q, sort }) {
   if (isError) return <p className="py-8 text-center text-sm text-red-400">Couldn't load files.</p>;
 
   const files = data.pages.flatMap((page) => page.data);
-  if (files.length === 0) return <EmptyState message={q ? 'No files match your search.' : undefined} />;
+  if (files.length === 0)
+    return (
+      <EmptyState
+        message={q ? 'No files match your search.' : folderId ? 'This folder is empty.' : undefined}
+      />
+    );
 
   return (
     <div>

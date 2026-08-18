@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { nanoid } from 'nanoid';
 import * as filesRepo from './files.repository.js';
+import * as foldersRepo from '../folders/folders.repository.js';
 import { validateFileIntent, computePartSize, sniffMimeType } from '../../services/storage.service.js';
 import { getZipListing } from '../../services/zip.service.js';
 import {
@@ -16,7 +17,12 @@ import {
 } from '../../services/upload.service.js';
 import { NotFoundError, ConflictError } from '../../lib/errors.js';
 
-export async function createUploadIntent({ userId, filename, sizeBytes, mimeType }) {
+export async function createUploadIntent({ userId, filename, sizeBytes, mimeType, folderId }) {
+  if (folderId) {
+    const folder = await foldersRepo.findOwnedFolder(folderId, userId);
+    if (!folder) throw new NotFoundError('Folder not found');
+  }
+
   const { sanitizedName, mimeType: resolvedMimeType } = validateFileIntent({ filename, sizeBytes, mimeType });
   const partSize = computePartSize(sizeBytes);
   const totalParts = Math.ceil(Number(sizeBytes) / partSize);
@@ -33,6 +39,7 @@ export async function createUploadIntent({ userId, filename, sizeBytes, mimeType
     uploadId: UploadId,
     partSizeBytes: partSize,
     totalParts,
+    folderId: folderId ?? null,
     status: 'PENDING',
   });
 
@@ -150,8 +157,21 @@ export async function renameFile({ fileId, userId, name }) {
   return filesRepo.updateFile(fileId, userId, { originalName: sanitized });
 }
 
-export async function updateFile({ fileId, userId, name, visibility }) {
+export async function moveFile({ fileId, userId, folderId }) {
+  const file = await filesRepo.findOwnedFile(fileId, userId);
+  if (!file) throw new NotFoundError();
+
+  if (folderId) {
+    const folder = await foldersRepo.findOwnedFolder(folderId, userId);
+    if (!folder) throw new NotFoundError('Destination folder not found');
+  }
+
+  return filesRepo.updateFile(fileId, userId, { folderId: folderId ?? null });
+}
+
+export async function updateFile({ fileId, userId, name, visibility, folderId }) {
   if (visibility) await updateFileVisibility({ fileId, userId, visibility });
+  if (folderId !== undefined) await moveFile({ fileId, userId, folderId });
   if (name) return renameFile({ fileId, userId, name });
   return filesRepo.findOwnedFile(fileId, userId);
 }
@@ -195,6 +215,6 @@ export async function restoreFile({ fileId, userId }) {
   return filesRepo.restoreFile(fileId, userId);
 }
 
-export async function listFiles({ userId, cursor, limit, q, sort }) {
-  return filesRepo.listOwnedFiles(userId, { cursor, limit, q, sort });
+export async function listFiles({ userId, cursor, limit, q, sort, folderId }) {
+  return filesRepo.listOwnedFiles(userId, { cursor, limit, q, sort, folderId });
 }
