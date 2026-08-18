@@ -4,6 +4,7 @@ import { DeleteConfirm } from './DeleteConfirm';
 import { PreviewModal } from './PreviewModal';
 import { MoveFileModal } from './MoveFileModal';
 import { InfoModal } from './InfoModal';
+import { ShareModal } from './ShareModal';
 
 export function FileActionModals({ file, actions }) {
   const {
@@ -12,6 +13,8 @@ export function FileActionModals({ file, actions }) {
     previewing, setPreviewing,
     moving, setMoving,
     viewingInfo, setViewingInfo,
+    sharing, setSharing,
+    isPublic, toggleVisibility,
     isUpdating, isDeleting,
     handleRename, handleDelete,
   } = actions;
@@ -37,6 +40,15 @@ export function FileActionModals({ file, actions }) {
       {previewing && <PreviewModal file={file} onClose={() => setPreviewing(false)} />}
       {moving && <MoveFileModal file={file} onClose={() => setMoving(false)} />}
       {viewingInfo && <InfoModal file={file} onClose={() => setViewingInfo(false)} />}
+      {sharing && (
+        <ShareModal
+          file={file}
+          isPublic={isPublic}
+          isUpdating={isUpdating}
+          onToggle={toggleVisibility}
+          onClose={() => setSharing(false)}
+        />
+      )}
     </AnimatePresence>
   );
 }

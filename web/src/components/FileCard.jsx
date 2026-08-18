@@ -1,20 +1,18 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, Eye, FolderInput, Globe, Info, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Download, Eye, FolderInput, Globe, Info, MoreVertical, Pencil, Share2, Trash2 } from 'lucide-react';
 import { formatBytes } from '../lib/format';
 import { useFileActions } from '../hooks/useFileActions';
 import { FileActionModals } from './FileActionModals';
-import { CopyLinkButton } from './CopyLinkButton';
 import { row, scaleIn, springy, quick } from '../lib/motion';
 
-export function FileCard({ file }) {
+export function FileCard({ file, isLast = false }) {
   const actions = useFileActions(file);
   const {
     menuOpen, setMenuOpen, menuRef,
     isPublic, Icon,
-    handleDownload, toggleVisibility,
+    handleDownload,
     setRenaming, setDeleting, setPreviewing, setMoving,
-    setViewingInfo,
-    isUpdating,
+    setViewingInfo, setSharing,
   } = actions;
 
   return (
@@ -33,19 +31,7 @@ export function FileCard({ file }) {
         <p className="font-mono text-xs text-muted">{formatBytes(file.sizeBytes)}</p>
       </div>
 
-      <button
-        onClick={toggleVisibility}
-        disabled={isUpdating}
-        className={`flex items-center gap-1 rounded-md p-2 text-xs transition-colors hover:bg-surface2 sm:px-2 sm:py-1 ${
-          isPublic ? 'text-warn' : 'text-muted'
-        }`}
-        title={isPublic ? 'Public — click to make private' : 'Private — click to make public'}
-      >
-        {isPublic ? <Globe size={14} /> : <Lock size={14} />}
-        <span className="hidden sm:inline">{isPublic ? 'Public' : 'Private'}</span>
-      </button>
-
-      {isPublic && file.shareSlug && <CopyLinkButton slug={file.shareSlug} />}
+      {isPublic && <Globe size={14} className="shrink-0 text-warn" title="Public" />}
 
       <motion.button
         whileTap={{ scale: 0.92 }}
@@ -91,6 +77,15 @@ export function FileCard({ file }) {
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
               >
                 <Info size={14} /> Info
+              </button>
+              <button
+                onClick={() => {
+                  setSharing(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <Share2 size={14} /> Share
               </button>
               <button
                 onClick={() => {

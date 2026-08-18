@@ -1,9 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, FolderInput, Globe, Info, Lock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Download, FolderInput, Globe, Info, MoreVertical, Pencil, Share2, Trash2 } from 'lucide-react';
 import { formatBytes } from '../lib/format';
 import { useFileActions } from '../hooks/useFileActions';
 import { FileActionModals } from './FileActionModals';
-import { CopyLinkButton } from './CopyLinkButton';
 import { scaleIn, springy, quick } from '../lib/motion';
 
 export function FileGridCard({ file }) {
@@ -11,10 +10,9 @@ export function FileGridCard({ file }) {
   const {
     menuOpen, setMenuOpen, menuRef,
     isPublic, Icon,
-    handleDownload, toggleVisibility,
+    handleDownload,
     setRenaming, setDeleting, setMoving, setPreviewing,
-    setViewingInfo,
-    isUpdating,
+    setViewingInfo, setSharing,
   } = actions;
 
   return (
@@ -71,18 +69,14 @@ export function FileGridCard({ file }) {
                 <Download size={14} /> Download
               </button>
               <button
-                onClick={toggleVisibility}
-                disabled={isUpdating}
+                onClick={() => {
+                  setSharing(true);
+                  setMenuOpen(false);
+                }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
               >
-                {isPublic ? <Lock size={14} /> : <Globe size={14} />}
-                {isPublic ? 'Make private' : 'Make public'}
+                <Share2 size={14} /> Share
               </button>
-              {isPublic && file.shareSlug && (
-                <div className="px-1">
-                  <CopyLinkButton slug={file.shareSlug} />
-                </div>
-              )}
               <button
                 onClick={() => {
                   setRenaming(true);
