@@ -14,7 +14,8 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 export const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(cookieParser(env.COOKIE_SECRET));
 app.use(
