@@ -7,7 +7,7 @@ import { RenameModal } from './RenameModal';
 import { DeleteConfirm } from './DeleteConfirm';
 import { row, scaleIn, springy, quick } from '../lib/motion';
 
-export function FolderRow({ folder, onOpen }) {
+export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -57,7 +57,9 @@ export function FolderRow({ folder, onOpen }) {
       animate="animate"
       exit="exit"
       transition={springy}
-      className="flex items-center gap-2 border-b border-edge px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3"
+      className={`flex items-center gap-2 border-b border-edge px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3 ${
+        isFirst ? 'rounded-t-lg' : ''
+      } ${isLast ? 'rounded-b-lg' : ''}`}
     >
       <button onClick={() => onOpen(folder.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <Folder size={18} className="shrink-0 text-accent" />
@@ -79,8 +81,10 @@ export function FolderRow({ folder, onOpen }) {
               animate="animate"
               exit="exit"
               transition={quick}
-              style={{ transformOrigin: 'top right' }}
-              className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl"
+              style={{ transformOrigin: isLast ? 'bottom right' : 'top right' }}
+              className={`absolute right-0 z-10 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl ${
+                isLast ? 'bottom-full mb-1' : 'mt-1'
+              }`}
             >
               <button
                 onClick={() => {
