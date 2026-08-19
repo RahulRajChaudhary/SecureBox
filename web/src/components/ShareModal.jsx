@@ -3,9 +3,11 @@ import { Globe, Link2, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
 
-export function ShareModal({ file, isPublic, isUpdating, onToggle, onClose }) {
+export function ShareModal({ name, shareSlug, isPublic, isUpdating, onToggle, onClose, kind = 'file' }) {
+  const basePath = kind === 'folder' ? '/share/folder' : '/share';
+
   async function handleCopy() {
-    const url = `${window.location.origin}/share/${file.shareSlug}`;
+    const url = `${window.location.origin}${basePath}/${shareSlug}`;
     await navigator.clipboard.writeText(url);
     toast.success('Share link copied');
   }
@@ -27,7 +29,7 @@ export function ShareModal({ file, isPublic, isUpdating, onToggle, onClose }) {
         className="w-full max-w-sm rounded-lg border border-edge bg-surface p-5 shadow-2xl"
       >
         <h2 className="mb-3 truncate text-sm font-semibold text-ink">
-          Share <span className="font-mono">{file.originalName}</span>
+          Share <span className="font-mono">{name}</span>
         </h2>
 
         <div className="flex items-center justify-between rounded-md border border-edge px-3 py-2">
@@ -45,7 +47,7 @@ export function ShareModal({ file, isPublic, isUpdating, onToggle, onClose }) {
           </motion.button>
         </div>
 
-        {isPublic && file.shareSlug && (
+        {isPublic && shareSlug && (
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleCopy}

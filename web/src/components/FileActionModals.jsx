@@ -42,7 +42,8 @@ export function FileActionModals({ file, actions }) {
       {viewingInfo && <FileInfoModal file={file} onClose={() => setViewingInfo(false)} />}
       {sharing && (
         <ShareModal
-          file={file}
+          name={file.originalName}
+          shareSlug={file.shareSlug}
           isPublic={isPublic}
           isUpdating={isUpdating}
           onToggle={toggleVisibility}
