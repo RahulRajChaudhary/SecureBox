@@ -24,16 +24,21 @@ export function FileGridCard({ file }) {
       animate="animate"
       exit="exit"
       transition={springy}
-      className="group relative flex flex-col gap-2 rounded-lg border border-edge bg-surface p-3 hover:bg-surface2"
+      className="group relative flex flex-col rounded-lg border border-edge bg-surface hover:bg-surface2"
     >
-      <button onClick={() => setPreviewing(true)} className="flex flex-col items-center gap-2 py-2">
+      <button
+        onClick={() => setPreviewing(true)}
+        className="block aspect-[4/3] w-full overflow-hidden rounded-t-lg"
+      >
         <FileThumbnail file={file} Icon={Icon} />
-        <p className="w-full truncate text-center font-mono text-xs font-medium text-ink">{file.originalName}</p>
       </button>
 
-      <div className="flex items-center justify-between text-xs text-muted">
-        <span className="font-mono">{formatBytes(file.sizeBytes)}</span>
-        {isPublic && <Globe size={13} className="text-warn" />}
+      <div className="flex flex-col gap-1 px-3 py-2">
+        <p className="w-full truncate font-mono text-xs font-medium text-ink">{file.originalName}</p>
+        <div className="flex items-center justify-between text-xs text-muted">
+          <span className="font-mono">{formatBytes(file.sizeBytes)}</span>
+          {isPublic && <Globe size={13} className="text-warn" />}
+        </div>
       </div>
 
       <div className="absolute right-2 top-2" ref={menuRef}>

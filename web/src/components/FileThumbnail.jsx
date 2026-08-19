@@ -28,14 +28,14 @@ export function FileThumbnail({ file, Icon }) {
         alt={file.originalName}
         loading="lazy"
         onError={() => setImageFailed(true)}
-        className="h-20 w-full rounded-md object-cover"
+        className="h-full w-full object-cover"
       />
     );
   }
 
   if (isVideo && url && !videoFailed) {
     return (
-      <div className="relative h-20 w-full">
+      <div className="relative h-full w-full">
         <video
           src={url}
           muted
@@ -65,9 +65,9 @@ export function FileThumbnail({ file, Icon }) {
           }}
         />
         {videoFrame ? (
-          <img src={videoFrame} alt={file.originalName} className="h-20 w-full rounded-md object-cover" />
+          <img src={videoFrame} alt={file.originalName} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-20 w-full items-center justify-center rounded-md bg-surface2">
+          <div className="flex h-full w-full items-center justify-center bg-surface2">
             <Icon size={32} className="text-muted" />
           </div>
         )}
@@ -79,7 +79,7 @@ export function FileThumbnail({ file, Icon }) {
   }
 
   return (
-    <div className="flex h-20 w-full items-center justify-center">
+    <div className="flex h-full w-full items-center justify-center bg-surface2">
       <Icon size={32} className="text-muted" />
     </div>
   );
