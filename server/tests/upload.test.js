@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app.js';
+import { prisma } from '../src/lib/prisma.js';
 
 // A real minimal 1x1 transparent PNG — file-type validates chunk structure
 // past the 8-byte signature, so a fake signature alone won't detect.
@@ -236,4 +237,57 @@ describe('Share links', () => {
     const res = await request(app).get(`/api/share/${fileId}`);
     expect(res.status).toBe(404);
   }, 20000);
+});
+
+describe('Storage quota', () => {
+  async function registerUserWithId() {
+    const email = `${crypto.randomUUID()}@example.com`;
+    const res = await request(app).post('/api/auth/register').send({ email, password: 'correct-horse-battery' });
+    return { token: res.body.accessToken, userId: res.body.user.id };
+  }
+
+  it('rejects an upload-intent that would exceed the 2 GB limit with 413 QUOTA_EXCEEDED', async () => {
+    const { token, userId } = await registerUserWithId();
+    await prisma.file.create({
+      data: {
+        ownerId: userId,
+        storageKey: `users/${userId}/${crypto.randomUUID()}`,
+        originalName: 'existing.png',
+        mimeType: 'image/png',
+        sizeBytes: BigInt(2 * 1024 ** 3 - 1024), // just under the cap
+        status: 'READY',
+      },
+    });
+
+    const res = await openIntent(token, { sizeBytes: 2048 });
+
+    expect(res.status).toBe(413);
+    expect(res.body.code).toBe('QUOTA_EXCEEDED');
+  });
+
+  it('allows an upload-intent that stays under the limit', async () => {
+    const { token, userId } = await registerUserWithId();
+    await prisma.file.create({
+      data: {
+        ownerId: userId,
+        storageKey: `users/${userId}/${crypto.randomUUID()}`,
+        originalName: 'existing.png',
+        mimeType: 'image/png',
+        sizeBytes: BigInt(1024),
+        status: 'READY',
+      },
+    });
+
+    const res = await openIntent(token, { sizeBytes: 2048 });
+
+    expect(res.status).toBe(201);
+  });
+
+  it('reports usedBytes and limitBytes from /api/files/usage', async () => {
+    const token = await registerUser();
+    const res = await request(app).get('/api/files/usage').set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ usedBytes: '0', limitBytes: 2 * 1024 ** 3 });
+  });
 });

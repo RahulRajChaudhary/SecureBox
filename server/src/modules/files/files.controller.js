@@ -72,8 +72,8 @@ export async function trash(req, res) {
 }
 
 export async function usage(req, res) {
-  const { usedBytes } = await filesService.getUsage({ userId: req.userId });
-  res.json({ data: { usedBytes: usedBytes.toString() } });
+  const { usedBytes, limitBytes } = await filesService.getUsage({ userId: req.userId });
+  res.json({ data: { usedBytes: usedBytes.toString(), limitBytes } });
 }
 
 export async function restore(req, res) {

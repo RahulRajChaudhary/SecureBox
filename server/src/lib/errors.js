@@ -35,3 +35,9 @@ export class UnauthorizedError extends HttpError {
     super(401, message);
   }
 }
+
+export class QuotaExceededError extends HttpError {
+  constructor(message = 'Storage limit exceeded') {
+    super(413, message, 'QUOTA_EXCEEDED');
+  }
+}

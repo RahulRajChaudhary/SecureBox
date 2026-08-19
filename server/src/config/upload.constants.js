@@ -3,6 +3,7 @@ export const PART_SIZE_MIN = 5 * 1024 * 1024; // 5 MB, S3 minimum
 export const PART_SIZE_DEFAULT = 10 * 1024 * 1024; // 10 MB default
 export const MAX_PARTS = 9500; // S3 caps at 10k, stay safe
 export const UPLOAD_EXPIRY_DAYS = 7; // matches S3 lifecycle rule
+export const STORAGE_LIMIT_BYTES = 2 * 1024 ** 3; // 2 GiB per-user cap, uniform for all users
 export const TRASH_RETENTION_DAYS = 30; // soft-deleted files are restorable until the reconciler purges them
 export const PRESIGNED_URL_EXPIRES = 3600; // 1 hour for part upload
 export const DOWNLOAD_URL_EXPIRES = 60; // 60 seconds for download

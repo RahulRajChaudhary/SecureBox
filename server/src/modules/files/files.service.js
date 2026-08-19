@@ -5,6 +5,7 @@ import * as filesRepo from './files.repository.js';
 import * as foldersRepo from '../folders/folders.repository.js';
 import { validateFileIntent, computePartSize, sniffMimeType } from '../../services/storage.service.js';
 import { getZipListing } from '../../services/zip.service.js';
+import { STORAGE_LIMIT_BYTES } from '../../config/upload.constants.js';
 import {
   createMultipartUpload,
   signPartUrls,
@@ -15,7 +16,7 @@ import {
   headObject,
   getPresignedDownloadUrl,
 } from '../../services/upload.service.js';
-import { NotFoundError, ConflictError } from '../../lib/errors.js';
+import { NotFoundError, ConflictError, QuotaExceededError } from '../../lib/errors.js';
 
 export async function createUploadIntent({ userId, filename, sizeBytes, mimeType, folderId }) {
   if (folderId) {
@@ -24,6 +25,12 @@ export async function createUploadIntent({ userId, filename, sizeBytes, mimeType
   }
 
   const { sanitizedName, mimeType: resolvedMimeType } = validateFileIntent({ filename, sizeBytes, mimeType });
+
+  const usedBytes = await filesRepo.getUsageBytes(userId);
+  if (usedBytes + BigInt(sizeBytes) > BigInt(STORAGE_LIMIT_BYTES)) {
+    throw new QuotaExceededError();
+  }
+
   const partSize = computePartSize(sizeBytes);
   const totalParts = Math.ceil(Number(sizeBytes) / partSize);
   const storageKey = `users/${userId}/${crypto.randomUUID()}`;
@@ -221,5 +228,5 @@ export async function listFiles({ userId, cursor, limit, q, sort, folderId, view
 
 export async function getUsage({ userId }) {
   const usedBytes = await filesRepo.getUsageBytes(userId);
-  return { usedBytes };
+  return { usedBytes, limitBytes: STORAGE_LIMIT_BYTES };
 }
