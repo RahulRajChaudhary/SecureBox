@@ -6,6 +6,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Share } from './pages/Share';
+import { ShareFolder } from './pages/ShareFolder';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -16,6 +17,8 @@ function AnimatedRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/share/:slug" element={<Share />} />
+        <Route path="/share/folder/:slug" element={<ShareFolder />} />
+        <Route path="/share/folder/:slug/:folderId" element={<ShareFolder />} />
         <Route
           path="/dashboard"
           element={
