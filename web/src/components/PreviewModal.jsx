@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FileQuestion, X } from 'lucide-react';
-import { getPreviewUrl, getZipContents } from '../lib/files';
+import { getZipContents } from '../lib/files';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
 import { ZipTree } from './ZipTree';
+import { useResolvedUrl } from '../hooks/useResolvedUrl';
 
 const TEXT_MIME_TYPES = new Set(['text/plain', 'text/csv', 'text/markdown', 'application/json']);
 const TEXT_PREVIEW_LIMIT = 100_000; // don't render huge text files inline
@@ -24,15 +25,6 @@ function Loading() {
 
 function LoadError({ message = 'Could not load preview.' }) {
   return <p className="py-12 text-center text-sm text-red-400">{message}</p>;
-}
-
-function useResolvedUrl(fileId, enabled) {
-  return useQuery({
-    queryKey: ['preview-url', fileId],
-    queryFn: () => getPreviewUrl(fileId),
-    enabled,
-    staleTime: 30_000,
-  });
 }
 
 function MediaPreview({ fileId, kind, name }) {

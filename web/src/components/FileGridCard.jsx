@@ -3,6 +3,7 @@ import { Download, FolderInput, Globe, Info, MoreVertical, Pencil, Share2, Trash
 import { formatBytes } from '../lib/format';
 import { useFileActions } from '../hooks/useFileActions';
 import { FileActionModals } from './FileActionModals';
+import { FileThumbnail } from './FileThumbnail';
 import { scaleIn, springy, quick } from '../lib/motion';
 
 export function FileGridCard({ file }) {
@@ -25,8 +26,8 @@ export function FileGridCard({ file }) {
       transition={springy}
       className="group relative flex flex-col gap-2 rounded-lg border border-edge bg-surface p-3 hover:bg-surface2"
     >
-      <button onClick={() => setPreviewing(true)} className="flex flex-col items-center gap-2 py-4">
-        <Icon size={32} className="text-muted" />
+      <button onClick={() => setPreviewing(true)} className="flex flex-col items-center gap-2 py-2">
+        <FileThumbnail file={file} Icon={Icon} />
         <p className="w-full truncate text-center font-mono text-xs font-medium text-ink">{file.originalName}</p>
       </button>
 
