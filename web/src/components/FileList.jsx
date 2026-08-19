@@ -6,7 +6,7 @@ import { EmptyState } from './EmptyState';
 function SkeletonRow({ delay }) {
   return (
     <div
-      className="flex animate-pulse items-center gap-3 border-b border-edge px-4 py-3 last:border-b-0"
+      className="flex animate-pulse items-center gap-3 border-b border-edge px-4 py-3 last:border-b-0 first:rounded-t-lg last:rounded-b-lg"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="h-[18px] w-[18px] shrink-0 rounded bg-surface2" />
@@ -27,7 +27,7 @@ export function FileList({ q, sort, folderId, view, emptyMessage }) {
 
   if (isLoading)
     return (
-      <div className="overflow-hidden rounded-lg border border-edge bg-surface">
+      <div className="rounded-lg border border-edge bg-surface">
         {[0, 1, 2, 3, 4].map((i) => (
           <SkeletonRow key={i} delay={i * 80} />
         ))}
@@ -41,10 +41,10 @@ export function FileList({ q, sort, folderId, view, emptyMessage }) {
       <p className="mb-2 text-xs text-muted">
         {files.length} file{files.length !== 1 ? 's' : ''} loaded
       </p>
-      <div className="overflow-hidden rounded-lg border border-edge bg-surface">
+      <div className="rounded-lg border border-edge bg-surface">
         <AnimatePresence initial={false}>
           {files.map((file, index) => (
-            <FileCard key={file.id} file={file} isLast={index === files.length - 1} />
+            <FileCard key={file.id} file={file} isFirst={index === 0} isLast={index === files.length - 1} />
           ))}
         </AnimatePresence>
         {hasNextPage && (

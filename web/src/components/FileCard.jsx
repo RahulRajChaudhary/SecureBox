@@ -5,7 +5,7 @@ import { useFileActions } from '../hooks/useFileActions';
 import { FileActionModals } from './FileActionModals';
 import { row, scaleIn, springy, quick } from '../lib/motion';
 
-export function FileCard({ file, isLast = false }) {
+export function FileCard({ file, isFirst = false, isLast = false }) {
   const actions = useFileActions(file);
   const {
     menuOpen, setMenuOpen, menuRef,
@@ -23,7 +23,9 @@ export function FileCard({ file, isLast = false }) {
       animate="animate"
       exit="exit"
       transition={springy}
-      className="flex items-center gap-2 border-b border-edge px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3"
+      className={`flex items-center gap-2 border-b border-edge px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3 ${
+        isFirst ? 'rounded-t-lg' : ''
+      } ${isLast ? 'rounded-b-lg' : ''}`}
     >
       <Icon size={18} className="shrink-0 text-muted" />
       <div className="min-w-0 flex-1">
