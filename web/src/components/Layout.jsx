@@ -12,7 +12,7 @@ export function Layout({ children, nav, onNavChange, q, onQChange, onNewFolder, 
 
   return (
     <div className="flex h-screen flex-col bg-bg">
-      <header className="flex shrink-0 items-center gap-4 border-b border-edge bg-surface/80 px-4 py-3 backdrop-blur">
+      <header className="relative z-30 flex shrink-0 items-center gap-4 border-b border-edge bg-surface/80 px-4 py-3 backdrop-blur">
         <div className="flex shrink-0 items-center gap-2 font-mono text-sm font-semibold tracking-tight text-ink">
           <ShieldCheck size={18} className="text-accent" />
           SecureBox
