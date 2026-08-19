@@ -10,6 +10,10 @@ function serializeFolder(folder) {
     shareSlug: folder.shareSlug,
     createdAt: folder.createdAt,
     updatedAt: folder.updatedAt,
+    ...(folder.subfolderCount !== undefined && {
+      subfolderCount: folder.subfolderCount,
+      fileCount: folder.fileCount,
+    }),
   };
 }
 

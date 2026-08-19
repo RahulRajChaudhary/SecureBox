@@ -76,6 +76,24 @@ export async function usage(req, res) {
   res.json({ data: { usedBytes: usedBytes.toString(), limitBytes } });
 }
 
+export async function stats(req, res) {
+  const s = await filesService.getStats({ userId: req.userId });
+  res.json({
+    data: {
+      totalFiles: s.totalFiles,
+      usedBytes: s.usedBytes.toString(),
+      limitBytes: s.limitBytes,
+      publicFileCount: s.publicFileCount,
+      recentUploadCount: s.recentUploadCount,
+      byMimeType: s.byMimeType.map((g) => ({
+        mimeType: g.mimeType,
+        count: g.count,
+        sizeBytes: g.sizeBytes.toString(),
+      })),
+    },
+  });
+}
+
 export async function restore(req, res) {
   const file = await filesService.restoreFile({ fileId: req.params.id, userId: req.userId });
   res.json({ data: serializeFile(file) });

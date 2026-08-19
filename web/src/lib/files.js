@@ -42,6 +42,10 @@ export function getUsage() {
   return apiRequest('/api/files/usage');
 }
 
+export function getStats() {
+  return apiRequest('/api/files/stats');
+}
+
 export function updateFile(fileId, patch) {
   return apiRequest(`/api/files/${fileId}`, { method: 'PATCH', body: JSON.stringify(patch) });
 }

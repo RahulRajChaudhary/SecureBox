@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { listFolders, getFolder, createFolder, updateFolder, deleteFolder } from '../lib/folders';
 
-export function useFolders(parentId) {
+export function useFolders(parentId, { enabled = true } = {}) {
   return useQuery({
     queryKey: ['folders', parentId ?? 'root'],
     queryFn: () => listFolders(parentId),
+    enabled,
   });
 }
 

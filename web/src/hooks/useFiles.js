@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { listFiles, updateFile, deleteFile, listTrash, restoreFile, getUsage } from '../lib/files';
+import { listFiles, updateFile, deleteFile, listTrash, restoreFile, getUsage, getStats } from '../lib/files';
 
 export function useFiles({ q, sort, folderId, view } = {}) {
   return useInfiniteQuery({
@@ -14,7 +14,10 @@ export function useUpdateFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ fileId, patch }) => updateFile(fileId, patch),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['files'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
   });
 }
 
@@ -26,6 +29,7 @@ export function useDeleteFile() {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
       queryClient.invalidateQueries({ queryKey: ['usage'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }
@@ -45,6 +49,7 @@ export function useRestoreFile() {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
       queryClient.invalidateQueries({ queryKey: ['usage'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }
@@ -54,5 +59,14 @@ export function useUsage() {
     queryKey: ['usage'],
     queryFn: getUsage,
     staleTime: 60_000,
+  });
+}
+
+export function useStats({ enabled = true } = {}) {
+  return useQuery({
+    queryKey: ['stats'],
+    queryFn: getStats,
+    staleTime: 60_000,
+    enabled,
   });
 }

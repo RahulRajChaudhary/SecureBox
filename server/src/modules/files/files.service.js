@@ -230,3 +230,22 @@ export async function getUsage({ userId }) {
   const usedBytes = await filesRepo.getUsageBytes(userId);
   return { usedBytes, limitBytes: STORAGE_LIMIT_BYTES };
 }
+
+export async function getStats({ userId }) {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [usedBytes, totalFiles, publicFileCount, recentUploadCount, byMimeTypeRaw] = await Promise.all([
+    filesRepo.getUsageBytes(userId),
+    filesRepo.getFileCount(userId),
+    filesRepo.getPublicFileCount(userId),
+    filesRepo.getRecentUploadCount(userId, since),
+    filesRepo.getMimeTypeBreakdown(userId),
+  ]);
+
+  const byMimeType = byMimeTypeRaw.map((g) => ({
+    mimeType: g.mimeType,
+    count: g._count._all,
+    sizeBytes: g._sum.sizeBytes ?? 0n,
+  }));
+
+  return { usedBytes, limitBytes: STORAGE_LIMIT_BYTES, totalFiles, publicFileCount, recentUploadCount, byMimeType };
+}

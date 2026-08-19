@@ -2,9 +2,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Folder, FolderInput, Globe, Info, MoreVertical, Pencil, Share2, Trash2 } from 'lucide-react';
 import { useFolderActions } from '../hooks/useFolderActions';
 import { FolderActionModals } from './FolderActionModals';
-import { row, scaleIn, springy, quick } from '../lib/motion';
+import { scaleIn, springy, quick } from '../lib/motion';
 
-export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
+export function FolderGridCard({ folder, onOpen }) {
   const actions = useFolderActions(folder);
   const {
     menuOpen, setMenuOpen, menuRef,
@@ -15,28 +15,33 @@ export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
   return (
     <motion.div
       layout
-      variants={row}
+      variants={scaleIn}
       initial="initial"
       animate="animate"
       exit="exit"
       transition={springy}
-      className={`relative flex items-center gap-2 border-b border-edge bg-accent/5 px-4 py-3 last:border-b-0 hover:bg-surface2 sm:gap-3 ${
-        isFirst ? 'rounded-t-lg' : ''
-      } ${isLast ? 'z-40 rounded-b-lg' : ''}`}
+      className="group relative flex flex-col rounded-lg border border-edge bg-surface hover:bg-surface2"
     >
-      <button onClick={() => onOpen(folder.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <Folder size={18} className="shrink-0 text-accent" />
-        <p className="truncate font-mono text-sm font-semibold text-ink">{folder.name}</p>
+      <button
+        onClick={() => onOpen(folder.id)}
+        className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-t-lg bg-surface2"
+      >
+        <Folder size={44} className="text-warn" />
       </button>
 
-      {isPublic && <Globe size={14} className="shrink-0 text-warn" title="Public" />}
+      <div className="flex flex-col gap-1 px-3 py-2">
+        <div className="flex items-center justify-between gap-1">
+          <p className="w-full truncate font-mono text-xs font-semibold text-ink">{folder.name}</p>
+          {isPublic && <Globe size={13} className="shrink-0 text-warn" />}
+        </div>
+      </div>
 
-      <div className="relative" ref={menuRef}>
+      <div className="absolute right-2 top-2" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="rounded-md p-2 text-muted transition-colors hover:bg-surface2 hover:text-ink sm:p-1.5"
+          className="rounded-md bg-surface p-1.5 text-muted opacity-0 transition-opacity hover:bg-surface2 hover:text-ink group-hover:opacity-100"
         >
-          <MoreVertical size={16} />
+          <MoreVertical size={15} />
         </button>
         <AnimatePresence>
           {menuOpen && (
@@ -46,10 +51,8 @@ export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
               animate="animate"
               exit="exit"
               transition={quick}
-              style={{ transformOrigin: isLast ? 'bottom right' : 'top right' }}
-              className={`absolute right-0 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl ${
-                isLast ? 'bottom-full z-40 mb-1' : 'z-10 mt-1'
-              }`}
+              style={{ transformOrigin: 'top right' }}
+              className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl"
             >
               <button
                 onClick={() => {

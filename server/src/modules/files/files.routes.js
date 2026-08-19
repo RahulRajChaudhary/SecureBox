@@ -15,6 +15,7 @@ filesRouter.post('/:id/abort', asyncHandler(filesController.abort));
 filesRouter.get('/', asyncHandler(filesController.list));
 filesRouter.get('/trash', asyncHandler(filesController.trash));
 filesRouter.get('/usage', asyncHandler(filesController.usage));
+filesRouter.get('/stats', asyncHandler(filesController.stats));
 filesRouter.patch('/:id', asyncHandler(filesController.update));
 filesRouter.delete('/:id', asyncHandler(filesController.remove));
 filesRouter.post('/:id/restore', asyncHandler(filesController.restore));

@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Play } from 'lucide-react';
 import { useResolvedUrl } from '../hooks/useResolvedUrl';
+import { getFileTypeStyle } from '../lib/fileTypeStyle';
 
 // Grid-view thumbnail for images and videos. Images render the resolved
 // file URL directly; videos capture a frame client-side onto a canvas
-// since we don't generate server-side thumbnails. Both fall back to the
-// passed-in file-type Icon on load/decode/CORS failure — a tainted canvas
+// since we don't generate server-side thumbnails. Both fall back to a big,
+// per-type colored icon on load/decode/CORS failure — a tainted canvas
 // (S3 response without permissive CORS) throws on toDataURL, which is
 // caught below rather than crashing the grid.
-export function FileThumbnail({ file, Icon }) {
+export function FileThumbnail({ file }) {
+  const { Icon, color } = getFileTypeStyle(file.mimeType);
   const isImage = file.mimeType?.startsWith('image/');
   const isVideo = file.mimeType?.startsWith('video/');
   const { data: url } = useResolvedUrl(file.id, isImage || isVideo);
@@ -68,7 +70,7 @@ export function FileThumbnail({ file, Icon }) {
           <img src={videoFrame} alt={file.originalName} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-surface2">
-            <Icon size={32} className="text-muted" />
+            <Icon size={44} className={color} />
           </div>
         )}
         <div className="absolute bottom-1 left-1 rounded bg-black/60 p-1">
@@ -80,7 +82,7 @@ export function FileThumbnail({ file, Icon }) {
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-surface2">
-      <Icon size={32} className="text-muted" />
+      <Icon size={44} className={color} />
     </div>
   );
 }

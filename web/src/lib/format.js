@@ -7,6 +7,11 @@ export function formatBytes(bytes) {
   return `${i === 0 ? value : value.toFixed(1)} ${units[i]}`;
 }
 
+export function usagePercent(usedBytes, limitBytes) {
+  if (!limitBytes) return 0;
+  return Math.min(100, (Number(usedBytes ?? 0) / limitBytes) * 100);
+}
+
 export function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString(undefined, {
     month: 'short',

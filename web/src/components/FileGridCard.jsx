@@ -10,7 +10,7 @@ export function FileGridCard({ file }) {
   const actions = useFileActions(file);
   const {
     menuOpen, setMenuOpen, menuRef,
-    isPublic, Icon,
+    isPublic,
     handleDownload,
     setRenaming, setDeleting, setMoving, setPreviewing,
     setViewingInfo, setSharing,
@@ -30,7 +30,7 @@ export function FileGridCard({ file }) {
         onClick={() => setPreviewing(true)}
         className="block aspect-[4/3] w-full overflow-hidden rounded-t-lg"
       >
-        <FileThumbnail file={file} Icon={Icon} />
+        <FileThumbnail file={file} />
       </button>
 
       <div className="flex flex-col gap-1 px-3 py-2">

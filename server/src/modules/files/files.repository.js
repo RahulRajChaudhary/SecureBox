@@ -22,6 +22,7 @@ export async function findFileBySlug(shareSlug) {
 
 export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'createdAt_desc', folderId, view } = {}) {
   const isRecent = view === 'recent';
+  const isShared = view === 'shared';
   const [sortField, sortDir] = isRecent
     ? ['updatedAt', 'desc']
     : sort.startsWith('name_')
@@ -33,12 +34,13 @@ export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'c
     ownerId,
     deletedAt: null,
     status: 'READY',
-    // Search and "recent" both span the whole drive, like Google Drive's
-    // search and Recent views — otherwise the listing is scoped to the
-    // current folder (null = root).
+    ...(isShared ? { visibility: 'PUBLIC' } : {}),
+    // Search, "recent", and "shared" all span the whole drive, like Google
+    // Drive's search and Recent views — otherwise the listing is scoped to
+    // the current folder (null = root).
     ...(q
       ? { originalName: { contains: q, mode: 'insensitive' } }
-      : isRecent
+      : isRecent || isShared
         ? {}
         : { folderId: folderId ?? null }),
   };
@@ -129,4 +131,29 @@ export async function getUsageBytes(ownerId) {
     _sum: { sizeBytes: true },
   });
   return result._sum.sizeBytes ?? 0n;
+}
+
+export async function getFileCount(ownerId) {
+  return prisma.file.count({ where: { ownerId, status: 'READY', deletedAt: null } });
+}
+
+export async function getPublicFileCount(ownerId) {
+  return prisma.file.count({
+    where: { ownerId, status: 'READY', deletedAt: null, visibility: 'PUBLIC' },
+  });
+}
+
+export async function getRecentUploadCount(ownerId, since) {
+  return prisma.file.count({
+    where: { ownerId, status: 'READY', deletedAt: null, createdAt: { gte: since } },
+  });
+}
+
+export async function getMimeTypeBreakdown(ownerId) {
+  return prisma.file.groupBy({
+    by: ['mimeType'],
+    where: { ownerId, status: 'READY', deletedAt: null },
+    _count: { _all: true },
+    _sum: { sizeBytes: true },
+  });
 }

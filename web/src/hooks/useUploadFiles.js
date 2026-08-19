@@ -25,6 +25,7 @@ export function useUploadFiles(folderId) {
           if (status === 'done') {
             queryClient.invalidateQueries({ queryKey: ['files'] });
             queryClient.invalidateQueries({ queryKey: ['usage'] });
+            queryClient.invalidateQueries({ queryKey: ['stats'] });
             toast.success(`${file.name} uploaded`);
             setTimeout(() => removeUpload(id), DONE_AUTO_DISMISS_MS);
           }

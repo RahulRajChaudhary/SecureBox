@@ -43,6 +43,17 @@ export async function countChildren(folderId, ownerId) {
   return subfolders + files;
 }
 
+// Like countChildren, but split instead of summed, and file count is
+// scoped to READY only (the sidebar tree shouldn't count in-flight
+// uploads, unlike the delete-safety check in countChildren).
+export async function countDirectChildrenBreakdown(folderId, ownerId) {
+  const [subfolders, files] = await Promise.all([
+    prisma.folder.count({ where: { parentId: folderId, ownerId } }),
+    prisma.file.count({ where: { folderId, ownerId, status: 'READY', deletedAt: null } }),
+  ]);
+  return { subfolders, files };
+}
+
 // Walks the parent chain to build a root-first breadcrumb. Folder trees are
 // shallow in practice, so N sequential lookups beats a recursive CTE here.
 export async function getAncestors(folderId, ownerId) {

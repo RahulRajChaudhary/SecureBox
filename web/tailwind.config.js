@@ -15,6 +15,23 @@ export default {
           dim: '#7fb520',
         },
         warn: '#e8b339',
+        series: {
+          documents: '#3987e5',
+          media: '#199e70',
+          archives: '#c98500',
+          other: '#9085e9',
+        },
+        file: {
+          pdf: '#e2624a',
+          doc: '#4f8fe0',
+          sheet: '#3ba55d',
+          slide: '#e07b39',
+          image: '#38bdf8',
+          video: '#9085e9',
+          audio: '#ec6a9e',
+          archive: '#c98500',
+          code: '#4fb3bf',
+        },
       },
       fontFamily: {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
