@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api, refreshAccessToken, setAccessToken, setUnauthorizedHandler } from '../lib/api';
+import { getMe } from '../lib/auth';
 
 const AuthContext = createContext(null);
 
@@ -24,14 +25,23 @@ export function AuthProvider({ children }) {
       return;
     }
     const payload = decodeJwtPayload(token);
-    setUser(payload ? { id: payload.sub, email: payload.email } : null);
+    setUser(payload ? { id: payload.sub, email: payload.email, avatarUrl: null } : null);
     setStatus('authenticated');
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const res = await getMe();
+    setUser((u) => (u ? { ...u, avatarUrl: res.data.avatarUrl } : u));
   }, []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => applyToken(null));
     refreshAccessToken().then(applyToken);
   }, [applyToken]);
+
+  useEffect(() => {
+    if (status === 'authenticated') refreshUser();
+  }, [status, refreshUser]);
 
   const register = useCallback(
     async (email, password) => {
@@ -69,7 +79,7 @@ export function AuthProvider({ children }) {
   }, [applyToken]);
 
   return (
-    <AuthContext.Provider value={{ user, status, register, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, status, register, login, loginWithGoogle, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
