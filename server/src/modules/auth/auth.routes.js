@@ -24,6 +24,7 @@ const refreshLimiter = rateLimit({
 
 authRouter.post('/register', loginLimiter, asyncHandler(authController.register));
 authRouter.post('/login', loginLimiter, asyncHandler(authController.login));
+authRouter.post('/google', loginLimiter, asyncHandler(authController.googleLogin));
 authRouter.post('/refresh', refreshLimiter, asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));
 authRouter.post('/logout-all', requireAuth, asyncHandler(authController.logoutAll));

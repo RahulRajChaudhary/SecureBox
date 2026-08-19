@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import argon2 from 'argon2';
 import { env } from '../../config/env.js';
-import { registerSchema, loginSchema } from '../../schemas/auth.schema.js';
+import { registerSchema, loginSchema, googleAuthSchema } from '../../schemas/auth.schema.js';
 import {
   signAccessToken,
   generateRefreshToken,
@@ -9,6 +9,8 @@ import {
   REFRESH_TOKEN_EXPIRES_IN_MS,
   REFRESH_COOKIE_NAME,
 } from '../../lib/tokens.js';
+import { verifyGoogleIdToken } from '../../lib/google.js';
+import { UnauthorizedError } from '../../lib/errors.js';
 import * as authRepository from './auth.repository.js';
 
 const REFRESH_COOKIE_OPTIONS = {
@@ -54,7 +56,7 @@ export async function login(req, res) {
   const { email, password } = loginSchema.parse(req.body);
 
   const user = await authRepository.findUserByEmail(email);
-  const valid = user ? await argon2.verify(user.passwordHash, password) : false;
+  const valid = user?.passwordHash ? await argon2.verify(user.passwordHash, password) : false;
 
   if (!valid) {
     return res.status(401).json({ error: 'Invalid email or password' });
@@ -113,4 +115,27 @@ export async function logoutAll(req, res) {
   await authRepository.revokeAllUserSessions(req.userId);
   res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
   res.status(204).end();
+}
+
+export async function googleLogin(req, res) {
+  const { credential } = googleAuthSchema.parse(req.body);
+  const { googleId, email, emailVerified } = await verifyGoogleIdToken(credential);
+
+  if (!emailVerified) {
+    throw new UnauthorizedError('Google email not verified');
+  }
+
+  let user = await authRepository.findUserByGoogleId(googleId);
+
+  if (!user) {
+    const existing = await authRepository.findUserByEmail(email);
+    user = existing
+      ? await authRepository.linkGoogleId(existing.id, googleId)
+      : await authRepository.createUserWithGoogle(email, googleId);
+  }
+
+  await issueSession(res, user);
+  const accessToken = signAccessToken(user);
+
+  res.json({ accessToken, user: { id: user.id, email: user.email } });
 }

@@ -4,6 +4,15 @@ import { app } from '../src/app.js';
 import { prisma } from '../src/lib/prisma.js';
 import { requireAuth } from '../src/middleware/requireAuth.js';
 import { signAccessToken } from '../src/lib/tokens.js';
+import { UnauthorizedError } from '../src/lib/errors.js';
+
+const { verifyGoogleIdToken } = vi.hoisted(() => ({ verifyGoogleIdToken: vi.fn() }));
+
+vi.mock('../src/lib/google.js', () => ({ verifyGoogleIdToken }));
+
+beforeEach(() => {
+  verifyGoogleIdToken.mockReset();
+});
 
 const credentials = { email: 'alice@example.com', password: 'correct-horse-battery' };
 
@@ -65,6 +74,22 @@ describe('POST /api/auth/login', () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'nobody@example.com', password: 'whatever1' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Invalid email or password');
+  });
+
+  it('rejects login for a Google-only account with no password set', async () => {
+    verifyGoogleIdToken.mockResolvedValue({
+      googleId: 'google-9',
+      email: 'erin@example.com',
+      emailVerified: true,
+    });
+    await request(app).post('/api/auth/google').send({ credential: 'valid-token' });
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'erin@example.com', password: 'whatever1' });
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Invalid email or password');
@@ -186,6 +211,80 @@ describe('POST /api/auth/logout-all', () => {
 
     const refreshB = await agentB.post('/api/auth/refresh');
     expect(refreshB.status).toBe(200);
+  });
+});
+
+describe('POST /api/auth/google', () => {
+  it('creates a new user on first Google sign-in', async () => {
+    verifyGoogleIdToken.mockResolvedValue({
+      googleId: 'google-1',
+      email: 'carol@example.com',
+      emailVerified: true,
+    });
+
+    const res = await request(app).post('/api/auth/google').send({ credential: 'valid-token' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toEqual(expect.any(String));
+    expect(res.body.user).toEqual({ id: expect.any(String), email: 'carol@example.com' });
+    expect(res.headers['set-cookie'][0]).toMatch(/^refresh_token=/);
+
+    const stored = await prisma.user.findUniqueOrThrow({ where: { email: 'carol@example.com' } });
+    expect(stored.googleId).toBe('google-1');
+    expect(stored.passwordHash).toBeNull();
+  });
+
+  it('logs in a returning Google user without creating a duplicate', async () => {
+    verifyGoogleIdToken.mockResolvedValue({
+      googleId: 'google-1',
+      email: 'carol@example.com',
+      emailVerified: true,
+    });
+
+    await request(app).post('/api/auth/google').send({ credential: 'valid-token' });
+    const res = await request(app).post('/api/auth/google').send({ credential: 'valid-token' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe('carol@example.com');
+
+    const count = await prisma.user.count({ where: { email: 'carol@example.com' } });
+    expect(count).toBe(1);
+  });
+
+  it('auto-links Google to an existing password account with the same email', async () => {
+    await request(app).post('/api/auth/register').send(credentials);
+    verifyGoogleIdToken.mockResolvedValue({
+      googleId: 'google-2',
+      email: credentials.email,
+      emailVerified: true,
+    });
+
+    const res = await request(app).post('/api/auth/google').send({ credential: 'valid-token' });
+
+    expect(res.status).toBe(200);
+    const stored = await prisma.user.findUniqueOrThrow({ where: { email: credentials.email } });
+    expect(stored.googleId).toBe('google-2');
+    expect(stored.passwordHash).toMatch(/^\$argon2/);
+  });
+
+  it('rejects an unverified Google email with 401', async () => {
+    verifyGoogleIdToken.mockResolvedValue({
+      googleId: 'google-3',
+      email: 'dave@example.com',
+      emailVerified: false,
+    });
+
+    const res = await request(app).post('/api/auth/google').send({ credential: 'valid-token' });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an invalid Google credential with 401', async () => {
+    verifyGoogleIdToken.mockRejectedValue(new UnauthorizedError('Invalid Google credential'));
+
+    const res = await request(app).post('/api/auth/google').send({ credential: 'garbage' });
+
+    expect(res.status).toBe(401);
   });
 });
 

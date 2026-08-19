@@ -12,6 +12,18 @@ export async function createUser(email, passwordHash) {
   return prisma.user.create({ data: { email, passwordHash } });
 }
 
+export async function findUserByGoogleId(googleId) {
+  return prisma.user.findUnique({ where: { googleId } });
+}
+
+export async function createUserWithGoogle(email, googleId) {
+  return prisma.user.create({ data: { email, googleId, passwordHash: null } });
+}
+
+export async function linkGoogleId(userId, googleId) {
+  return prisma.user.update({ where: { id: userId }, data: { googleId } });
+}
+
 export async function createSession({ userId, familyId, tokenHash, expiresAt }) {
   return prisma.session.create({ data: { userId, familyId, tokenHash, expiresAt } });
 }
