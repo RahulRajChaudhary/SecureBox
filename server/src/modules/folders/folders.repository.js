@@ -11,6 +11,10 @@ export async function findOwnedFolder(folderId, ownerId) {
   return prisma.folder.findFirst({ where: { id: folderId, ownerId } });
 }
 
+export async function findFolderBySlug(shareSlug) {
+  return prisma.folder.findFirst({ where: { shareSlug } });
+}
+
 export async function listOwnedFolders(ownerId, parentId = null) {
   return prisma.folder.findMany({
     where: { ownerId, parentId },
