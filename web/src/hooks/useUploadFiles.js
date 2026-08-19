@@ -35,9 +35,11 @@ export function useUploadFiles(folderId) {
         },
       });
       managers.set(id, manager);
-      manager.start().catch(() => {
-        updateUpload(id, { status: 'error', error: 'Could not start upload' });
-        toast.error(`${file.name} failed to upload`);
+      manager.start().catch((err) => {
+        const message =
+          err?.code === 'QUOTA_EXCEEDED' ? 'Storage limit reached — free up space or delete files' : 'Could not start upload';
+        updateUpload(id, { status: 'error', error: message });
+        toast.error(message);
       });
     },
     [addUpload, updateUpload, removeUpload, queryClient],
