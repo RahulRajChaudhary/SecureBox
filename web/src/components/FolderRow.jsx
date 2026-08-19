@@ -47,8 +47,8 @@ export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
               exit="exit"
               transition={quick}
               style={{ transformOrigin: isLast ? 'bottom right' : 'top right' }}
-              className={`absolute right-0 z-10 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl ${
-                isLast ? 'bottom-full mb-1' : 'mt-1'
+              className={`absolute right-0 w-36 rounded-md border border-edge bg-surface2 py-1 shadow-xl ${
+                isLast ? 'bottom-full z-40 mb-1' : 'z-10 mt-1'
               }`}
             >
               <button
