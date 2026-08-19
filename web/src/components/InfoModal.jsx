@@ -1,26 +1,7 @@
 import { motion } from 'framer-motion';
-import { useFolder } from '../hooks/useFolders';
-import { formatBytes, formatDate } from '../lib/format';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
 
-function locationLabel(file, crumbs) {
-  if (!file.folderId || crumbs.length === 0) return 'My Drive';
-  return crumbs.map((crumb) => crumb.name).join(' / ');
-}
-
-export function InfoModal({ file, onClose }) {
-  const { data } = useFolder(file.folderId);
-  const crumbs = data?.data?.breadcrumb ?? [];
-
-  const rows = [
-    ['Type', file.mimeType || 'Unknown'],
-    ['Size', formatBytes(file.sizeBytes)],
-    ['Location', locationLabel(file, crumbs)],
-    ['Created', formatDate(file.createdAt)],
-    ['Modified', formatDate(file.updatedAt)],
-    ['Visibility', file.visibility === 'PUBLIC' ? 'Public' : 'Private'],
-  ];
-
+export function InfoModal({ title, rows, onClose }) {
   return (
     <motion.div
       variants={backdropFade}
@@ -37,7 +18,7 @@ export function InfoModal({ file, onClose }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-lg border border-edge bg-surface p-5 shadow-2xl"
       >
-        <h2 className="mb-3 truncate text-sm font-semibold text-ink">{file.originalName}</h2>
+        <h2 className="mb-3 truncate text-sm font-semibold text-ink">{title}</h2>
         <dl className="flex flex-col gap-2">
           {rows.map(([label, value]) => (
             <div key={label} className="flex items-center justify-between gap-3 text-sm">

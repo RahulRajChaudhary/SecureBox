@@ -3,7 +3,7 @@ import { RenameModal } from './RenameModal';
 import { DeleteConfirm } from './DeleteConfirm';
 import { PreviewModal } from './PreviewModal';
 import { MoveFileModal } from './MoveFileModal';
-import { InfoModal } from './InfoModal';
+import { FileInfoModal } from './FileInfoModal';
 import { ShareModal } from './ShareModal';
 
 export function FileActionModals({ file, actions }) {
@@ -39,7 +39,7 @@ export function FileActionModals({ file, actions }) {
       )}
       {previewing && <PreviewModal file={file} onClose={() => setPreviewing(false)} />}
       {moving && <MoveFileModal file={file} onClose={() => setMoving(false)} />}
-      {viewingInfo && <InfoModal file={file} onClose={() => setViewingInfo(false)} />}
+      {viewingInfo && <FileInfoModal file={file} onClose={() => setViewingInfo(false)} />}
       {sharing && (
         <ShareModal
           file={file}
