@@ -6,12 +6,13 @@ import {
   AbortMultipartUploadCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  PutObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3 } from '../lib/s3.js';
 import { env } from '../config/env.js';
-import { PRESIGNED_URL_EXPIRES, DOWNLOAD_URL_EXPIRES } from '../config/upload.constants.js';
+import { PRESIGNED_URL_EXPIRES, DOWNLOAD_URL_EXPIRES, AVATAR_URL_EXPIRES } from '../config/upload.constants.js';
 
 export async function createMultipartUpload({ storageKey, mimeType }) {
   const res = await s3.send(
@@ -117,4 +118,18 @@ export async function getPresignedDownloadUrl({ storageKey, filename, dispositio
     }),
     { expiresIn: DOWNLOAD_URL_EXPIRES },
   );
+}
+
+export async function getAvatarUploadUrl({ storageKey, mimeType }) {
+  return getSignedUrl(
+    s3,
+    new PutObjectCommand({ Bucket: env.S3_BUCKET, Key: storageKey, ContentType: mimeType }),
+    { expiresIn: PRESIGNED_URL_EXPIRES },
+  );
+}
+
+export async function getAvatarDownloadUrl({ storageKey }) {
+  return getSignedUrl(s3, new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: storageKey }), {
+    expiresIn: AVATAR_URL_EXPIRES,
+  });
 }

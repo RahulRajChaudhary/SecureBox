@@ -6,6 +6,7 @@ import {
   PART_SIZE_DEFAULT,
   MAX_PARTS,
   ALLOWED_MIME_TYPES,
+  ALLOWED_AVATAR_MIME_TYPES,
   BLOCKED_EXTENSIONS,
   EXTENSION_MIME_FALLBACK,
   MIME_TYPE_ALIASES,
@@ -53,6 +54,14 @@ export function validateFileIntent({ filename, sizeBytes, mimeType }) {
   }
 
   return { sanitizedName: sanitized, mimeType: effectiveMimeType };
+}
+
+export function validateAvatarIntent({ mimeType }) {
+  const effectiveMimeType = MIME_TYPE_ALIASES[mimeType] ?? mimeType;
+  if (!ALLOWED_AVATAR_MIME_TYPES.has(effectiveMimeType)) {
+    throw new UnsupportedMediaError(`Avatar must be one of: ${[...ALLOWED_AVATAR_MIME_TYPES].join(', ')}`);
+  }
+  return effectiveMimeType;
 }
 
 export async function sniffMimeType(storageKey) {

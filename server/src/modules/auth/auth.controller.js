@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import argon2 from 'argon2';
 import { env } from '../../config/env.js';
-import { registerSchema, loginSchema, googleAuthSchema } from '../../schemas/auth.schema.js';
+import { registerSchema, loginSchema, googleAuthSchema, avatarUploadSchema } from '../../schemas/auth.schema.js';
 import {
   signAccessToken,
   generateRefreshToken,
@@ -10,7 +10,9 @@ import {
   REFRESH_COOKIE_NAME,
 } from '../../lib/tokens.js';
 import { verifyGoogleIdToken } from '../../lib/google.js';
-import { UnauthorizedError } from '../../lib/errors.js';
+import { UnauthorizedError, ConflictError } from '../../lib/errors.js';
+import { validateAvatarIntent } from '../../services/storage.service.js';
+import { headObject, getAvatarUploadUrl, getAvatarDownloadUrl } from '../../services/upload.service.js';
 import * as authRepository from './auth.repository.js';
 
 const REFRESH_COOKIE_OPTIONS = {
@@ -138,4 +140,30 @@ export async function googleLogin(req, res) {
   const accessToken = signAccessToken(user);
 
   res.json({ accessToken, user: { id: user.id, email: user.email } });
+}
+
+export async function me(req, res) {
+  const user = await authRepository.findUserById(req.userId);
+  const avatarUrl = user.avatarKey ? await getAvatarDownloadUrl({ storageKey: user.avatarKey }) : null;
+  res.json({ data: { id: user.id, email: user.email, avatarUrl } });
+}
+
+export async function avatarUploadUrl(req, res) {
+  const { mimeType } = avatarUploadSchema.parse(req.body);
+  const effectiveMimeType = validateAvatarIntent({ mimeType });
+  const storageKey = `users/${req.userId}/avatar`;
+  const uploadUrl = await getAvatarUploadUrl({ storageKey, mimeType: effectiveMimeType });
+  res.json({ data: { uploadUrl } });
+}
+
+export async function confirmAvatar(req, res) {
+  const storageKey = `users/${req.userId}/avatar`;
+  try {
+    await headObject({ storageKey });
+  } catch {
+    throw new ConflictError('Avatar upload not found — upload the file before confirming', 'AVATAR_NOT_UPLOADED');
+  }
+  await authRepository.setAvatarKey(req.userId, storageKey);
+  const avatarUrl = await getAvatarDownloadUrl({ storageKey });
+  res.json({ data: { avatarUrl } });
 }

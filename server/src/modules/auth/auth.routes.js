@@ -28,3 +28,6 @@ authRouter.post('/google', loginLimiter, asyncHandler(authController.googleLogin
 authRouter.post('/refresh', refreshLimiter, asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));
 authRouter.post('/logout-all', requireAuth, asyncHandler(authController.logoutAll));
+authRouter.get('/me', requireAuth, asyncHandler(authController.me));
+authRouter.put('/me/avatar', requireAuth, asyncHandler(authController.avatarUploadUrl));
+authRouter.post('/me/avatar/confirm', requireAuth, asyncHandler(authController.confirmAvatar));

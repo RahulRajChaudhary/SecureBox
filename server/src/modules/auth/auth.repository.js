@@ -24,6 +24,10 @@ export async function linkGoogleId(userId, googleId) {
   return prisma.user.update({ where: { id: userId }, data: { googleId } });
 }
 
+export async function setAvatarKey(userId, avatarKey) {
+  return prisma.user.update({ where: { id: userId }, data: { avatarKey } });
+}
+
 export async function createSession({ userId, familyId, tokenHash, expiresAt }) {
   return prisma.session.create({ data: { userId, familyId, tokenHash, expiresAt } });
 }

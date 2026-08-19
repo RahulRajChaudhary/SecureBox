@@ -10,6 +10,9 @@ export const DOWNLOAD_URL_EXPIRES = 60; // 60 seconds for download
 
 // Allowlist, never a denylist — files not in this list are rejected at intent time
 
+export const ALLOWED_AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+export const AVATAR_URL_EXPIRES = 3600; // 1 hour — long enough to survive a normal session between /me refetches
+
 export const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
   'video/mp4', 'video/quicktime', 'video/webm',
