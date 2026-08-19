@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { LogOut, Search, ShieldCheck } from 'lucide-react';
+import { Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUsage } from '../hooks/useFiles';
 import { Sidebar } from './Sidebar';
+import { ProfileMenu } from './ProfileMenu';
 import { fadeUp, quick } from '../lib/motion';
 
 export function Layout({ children, nav, onNavChange, q, onQChange, onNewFolder, onUploadFiles }) {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { data: usage } = useUsage();
 
   return (
@@ -25,15 +26,8 @@ export function Layout({ children, nav, onNavChange, q, onQChange, onNewFolder, 
             className="w-full rounded-full border border-edge bg-bg py-1.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
           />
         </div>
-        <div className="flex shrink-0 items-center gap-4 text-sm text-muted">
-          <span className="hidden font-mono text-xs sm:inline">{user?.email}</span>
-          <button
-            onClick={logout}
-            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-muted transition-colors hover:bg-surface2 hover:text-ink"
-          >
-            <LogOut size={15} />
-            Log out
-          </button>
+        <div className="flex shrink-0 items-center">
+          <ProfileMenu user={user} logout={logout} refreshUser={refreshUser} />
         </div>
       </header>
 
