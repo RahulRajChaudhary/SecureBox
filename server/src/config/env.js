@@ -10,6 +10,7 @@ const envSchema = z.object({
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),
   S3_REGION: z.string().min(1),
+  GOOGLE_CLIENT_ID: z.string().min(1),
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
