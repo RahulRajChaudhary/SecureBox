@@ -22,7 +22,7 @@ export function UploadQueue() {
   if (active.length === 0) return null;
 
   return (
-    <div className="divide-y divide-edge overflow-hidden rounded-lg border border-edge bg-surface">
+    <div className="fixed bottom-4 right-4 z-40 w-80 divide-y divide-edge overflow-hidden rounded-lg border border-edge bg-surface shadow-2xl">
       <AnimatePresence initial={false}>
         {active.map((u) => {
           const manager = managers.get(u.id);
@@ -39,7 +39,7 @@ export function UploadQueue() {
               animate="animate"
               exit="exit"
               transition={springy}
-              className="flex items-center gap-3 px-4 py-3"
+              className="flex items-center gap-2 px-3 py-2.5"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">

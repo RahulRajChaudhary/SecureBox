@@ -78,8 +78,6 @@ export function Dashboard() {
     >
       <DropOverlay onDrop={uploadFiles}>
         <div className="flex flex-col gap-6">
-          <UploadQueue />
-
           {nav === 'trash' ? (
             <TrashList />
           ) : (
@@ -122,6 +120,7 @@ export function Dashboard() {
           </AnimatePresence>
         </div>
       </DropOverlay>
+      <UploadQueue />
     </Layout>
   );
 }

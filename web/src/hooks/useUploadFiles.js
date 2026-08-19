@@ -4,9 +4,12 @@ import toast from 'react-hot-toast';
 import { UploadManager } from '../lib/uploadManager';
 import { useUploadStore, managers } from '../lib/uploadStore';
 
+const DONE_AUTO_DISMISS_MS = 3000;
+
 export function useUploadFiles(folderId) {
   const addUpload = useUploadStore((s) => s.addUpload);
   const updateUpload = useUploadStore((s) => s.updateUpload);
+  const removeUpload = useUploadStore((s) => s.removeUpload);
   const queryClient = useQueryClient();
 
   return useCallback(
@@ -22,6 +25,7 @@ export function useUploadFiles(folderId) {
               queryClient.invalidateQueries({ queryKey: ['files'] });
               queryClient.invalidateQueries({ queryKey: ['usage'] });
               toast.success(`${file.name} uploaded`);
+              setTimeout(() => removeUpload(id), DONE_AUTO_DISMISS_MS);
             }
             if (status === 'error') {
               updateUpload(id, { error: extra?.message ?? 'Upload failed' });
@@ -36,6 +40,6 @@ export function useUploadFiles(folderId) {
         });
       });
     },
-    [addUpload, updateUpload, queryClient, folderId],
+    [addUpload, updateUpload, removeUpload, queryClient, folderId],
   );
 }
