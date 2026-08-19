@@ -1,53 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Folder, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useUpdateFolder, useDeleteFolder } from '../hooks/useFolders';
-import { RenameModal } from './RenameModal';
-import { DeleteConfirm } from './DeleteConfirm';
+import { Folder, FolderInput, Globe, Info, MoreVertical, Pencil, Share2, Trash2 } from 'lucide-react';
+import { useFolderActions } from '../hooks/useFolderActions';
+import { FolderActionModals } from './FolderActionModals';
 import { row, scaleIn, springy, quick } from '../lib/motion';
 
 export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [renaming, setRenaming] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const menuRef = useRef(null);
-  const updateFolder = useUpdateFolder();
-  const deleteFolder = useDeleteFolder();
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handlePointer(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
-    }
-    function handleKey(e) {
-      if (e.key === 'Escape') setMenuOpen(false);
-    }
-    document.addEventListener('mousedown', handlePointer);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handlePointer);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [menuOpen]);
-
-  function handleRename(name) {
-    updateFolder.mutate(
-      { folderId: folder.id, patch: { name } },
-      {
-        onSuccess: () => setRenaming(false),
-        onError: () => toast.error('Rename failed'),
-      },
-    );
-  }
-
-  function handleDelete() {
-    deleteFolder.mutate(folder.id, {
-      onSuccess: () => toast.success('Folder deleted'),
-      onError: (err) =>
-        toast.error(err.code === 'FOLDER_NOT_EMPTY' ? 'Folder is not empty' : 'Delete failed'),
-    });
-  }
+  const actions = useFolderActions(folder);
+  const {
+    menuOpen, setMenuOpen, menuRef,
+    isPublic,
+    setRenaming, setDeleting, setMoving, setViewingInfo, setSharing,
+  } = actions;
 
   return (
     <motion.div
@@ -65,6 +28,8 @@ export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
         <Folder size={18} className="shrink-0 text-accent" />
         <p className="truncate font-mono text-sm font-medium text-ink">{folder.name}</p>
       </button>
+
+      {isPublic && <Globe size={14} className="shrink-0 text-warn" title="Public" />}
 
       <div className="relative" ref={menuRef}>
         <button
@@ -88,12 +53,39 @@ export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
             >
               <button
                 onClick={() => {
+                  setViewingInfo(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <Info size={14} /> Info
+              </button>
+              <button
+                onClick={() => {
+                  setSharing(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <Share2 size={14} /> Share
+              </button>
+              <button
+                onClick={() => {
                   setRenaming(true);
                   setMenuOpen(false);
                 }}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
               >
                 <Pencil size={14} /> Rename
+              </button>
+              <button
+                onClick={() => {
+                  setMoving(true);
+                  setMenuOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-muted hover:bg-surface hover:text-ink"
+              >
+                <FolderInput size={14} /> Move to
               </button>
               <button
                 onClick={() => {
@@ -109,32 +101,7 @@ export function FolderRow({ folder, onOpen, isFirst = false, isLast = false }) {
         </AnimatePresence>
       </div>
 
-      <AnimatePresence>
-        {renaming && (
-          <RenameModal
-            title="Rename folder"
-            initialName={folder.name}
-            onSave={handleRename}
-            onClose={() => setRenaming(false)}
-            saving={updateFolder.isPending}
-          />
-        )}
-        {deleting && (
-          <DeleteConfirm
-            title="Delete folder"
-            name={folder.name}
-            message={
-              <>
-                Delete <span className="font-mono font-medium text-ink">{folder.name}</span>? The
-                folder must be empty.
-              </>
-            }
-            onConfirm={handleDelete}
-            onClose={() => setDeleting(false)}
-            deleting={deleteFolder.isPending}
-          />
-        )}
-      </AnimatePresence>
+      <FolderActionModals folder={folder} actions={actions} />
     </motion.div>
   );
 }
