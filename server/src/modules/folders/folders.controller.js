@@ -6,7 +6,10 @@ function serializeFolder(folder) {
     id: folder.id,
     name: folder.name,
     parentId: folder.parentId,
+    visibility: folder.visibility,
+    shareSlug: folder.shareSlug,
     createdAt: folder.createdAt,
+    updatedAt: folder.updatedAt,
   };
 }
 

@@ -1,5 +1,6 @@
 import * as foldersRepo from './folders.repository.js';
 import { NotFoundError, ConflictError } from '../../lib/errors.js';
+import { nanoid } from 'nanoid';
 
 export async function createFolder({ userId, name, parentId }) {
   if (parentId) {
@@ -48,7 +49,23 @@ async function moveFolder({ userId, folderId, parentId }) {
   return folder;
 }
 
-export async function updateFolder({ userId, folderId, name, parentId }) {
+export async function updateFolderVisibility({ userId, folderId, visibility }) {
+  const folder = await foldersRepo.findOwnedFolder(folderId, userId);
+  if (!folder) throw new NotFoundError();
+
+  let shareSlug = folder.shareSlug;
+  if (visibility === 'PUBLIC' && !shareSlug) {
+    shareSlug = nanoid(16);
+  }
+  if (visibility === 'PRIVATE' && shareSlug) {
+    shareSlug = null; // rotate — old link dies immediately, not lazily
+  }
+
+  return foldersRepo.updateFolder(folderId, userId, { visibility, shareSlug });
+}
+
+export async function updateFolder({ userId, folderId, name, parentId, visibility }) {
+  if (visibility !== undefined) await updateFolderVisibility({ userId, folderId, visibility });
   if (parentId !== undefined) await moveFolder({ userId, folderId, parentId });
   if (name !== undefined) return renameFolder({ userId, folderId, name });
   return foldersRepo.findOwnedFolder(folderId, userId);

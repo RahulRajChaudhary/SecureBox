@@ -74,16 +74,18 @@ model File {
 }
 
 model Folder {
-  id        String   @id @default(uuid())
-  ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  name      String
-  parentId  String?
-  parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Folder[] @relation("FolderHierarchy")
-  files     File[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String     @id @default(uuid())
+  ownerId    String
+  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name       String
+  parentId   String?
+  parent     Folder?    @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Folder[]   @relation("FolderHierarchy")
+  files      File[]
+  visibility Visibility @default(PRIVATE)
+  shareSlug  String?    @unique
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@index([ownerId, parentId])
 }
