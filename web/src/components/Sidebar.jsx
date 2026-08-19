@@ -8,7 +8,11 @@ const NAV_ITEMS = [
   { key: 'trash', label: 'Trash', icon: Trash2 },
 ];
 
-export function Sidebar({ nav, onNavChange, onNewFolder, onUploadFiles, usedBytes }) {
+export function Sidebar({ nav, onNavChange, onNewFolder, onUploadFiles, usedBytes, limitBytes }) {
+  const usedNum = Number(usedBytes ?? 0);
+  const pct = limitBytes ? Math.min(100, (usedNum / limitBytes) * 100) : 0;
+  const barColor = pct >= 95 ? 'bg-red-400' : pct >= 80 ? 'bg-warn' : 'bg-accent';
+
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-edge bg-surface">
       <NewMenu onNewFolder={onNewFolder} onUploadFiles={onUploadFiles} />
@@ -28,8 +32,17 @@ export function Sidebar({ nav, onNavChange, onNewFolder, onUploadFiles, usedByte
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-edge px-3 py-3 text-xs text-muted">
-        {usedBytes != null ? `${formatBytes(usedBytes)} used` : null}
+      <div className="mt-auto border-t border-edge px-3 py-3">
+        {usedBytes != null && limitBytes != null && (
+          <>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface2">
+              <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+            </div>
+            <p className="mt-1.5 font-mono text-xs text-muted">
+              {formatBytes(usedBytes)} of {formatBytes(limitBytes)} used
+            </p>
+          </>
+        )}
       </div>
     </aside>
   );

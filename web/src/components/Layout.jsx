@@ -44,6 +44,7 @@ export function Layout({ children, nav, onNavChange, q, onQChange, onNewFolder, 
           onNewFolder={onNewFolder}
           onUploadFiles={onUploadFiles}
           usedBytes={usage?.data?.usedBytes}
+          limitBytes={usage?.data?.limitBytes}
         />
         <motion.main
           initial={fadeUp.initial}
