@@ -1,6 +1,7 @@
 const AUTH_PATHS = new Set([
   '/api/auth/register',
   '/api/auth/login',
+  '/api/auth/google',
   '/api/auth/refresh',
   '/api/auth/logout',
 ]);

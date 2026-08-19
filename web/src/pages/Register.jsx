@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthLayout } from '../components/AuthLayout';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { staggerContainer, staggerItem, quick } from '../lib/motion';
 
 export function Register() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,8 +30,26 @@ export function Register() {
     }
   }
 
+  async function handleGoogleCredential(credential) {
+    setError(null);
+    try {
+      await loginWithGoogle(credential);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <AuthLayout>
+      <div className="mb-4 flex w-full max-w-sm flex-col items-center gap-3">
+        <GoogleSignInButton onCredential={handleGoogleCredential} />
+        <div className="flex w-full items-center gap-2 text-xs text-muted">
+          <div className="h-px flex-1 bg-edge" />
+          or
+          <div className="h-px flex-1 bg-edge" />
+        </div>
+      </div>
       <motion.form
         variants={staggerContainer}
         initial="initial"

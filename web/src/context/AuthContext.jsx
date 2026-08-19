@@ -53,13 +53,23 @@ export function AuthProvider({ children }) {
     [applyToken],
   );
 
+  const loginWithGoogle = useCallback(
+    async (credential) => {
+      const res = await api.post('/api/auth/google', { credential });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Google sign-in failed');
+      applyToken(data.accessToken);
+    },
+    [applyToken],
+  );
+
   const logout = useCallback(async () => {
     await api.post('/api/auth/logout');
     applyToken(null);
   }, [applyToken]);
 
   return (
-    <AuthContext.Provider value={{ user, status, register, login, logout }}>
+    <AuthContext.Provider value={{ user, status, register, login, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
