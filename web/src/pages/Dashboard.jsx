@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Upload, FolderPlus } from 'lucide-react';
@@ -49,7 +50,9 @@ export function Dashboard() {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('createdAt_desc');
   const [nav, setNav] = useState('files'); // 'files' | 'recent' | 'shared' | 'stats' | 'trash'
-  const [folderId, setFolderId] = useState(null);
+  const { folderId: folderIdParam } = useParams();
+  const navigate = useNavigate();
+  const folderId = folderIdParam ?? null;
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [viewMode, setViewMode] = useState(readViewMode);
   const [filesFilter, setFilesFilter] = useState('all'); // 'all' | 'folders' — only meaningful for nav === 'files'
@@ -67,13 +70,13 @@ export function Dashboard() {
   function handleNavChange(next) {
     setNav(next);
     setQ('');
-    if (next === 'files') setFolderId(null);
+    if (next === 'files') navigate('/dashboard');
   }
 
   function handleOpenFolder(id) {
     setNav('files');
     setQ('');
-    setFolderId(id);
+    navigate(id ? `/dashboard/folder/${id}` : '/dashboard');
   }
 
   function handleCreateFolder(name) {
@@ -149,7 +152,10 @@ export function Dashboard() {
 
               <div className="flex items-center justify-between gap-3">
                 {nav === 'files' ? (
-                  <Breadcrumb folderId={folderId} onNavigate={setFolderId} />
+                  <Breadcrumb
+                    folderId={folderId}
+                    onNavigate={(id) => navigate(id ? `/dashboard/folder/${id}` : '/dashboard')}
+                  />
                 ) : (
                   <h1 className="text-sm font-medium text-ink">{NAV_TITLES[nav]}</h1>
                 )}
@@ -191,7 +197,7 @@ export function Dashboard() {
               </div>
 
               {nav === 'files' && (!q || isFoldersOnly) && (
-                <FolderList parentId={folderId} onOpen={setFolderId} viewMode={viewMode} sort={sort} />
+                <FolderList parentId={folderId} onOpen={handleOpenFolder} viewMode={viewMode} sort={sort} />
               )}
 
               {nav === 'recent' && isFoldersOnly && (

@@ -40,6 +40,10 @@ export async function revokeSession(id) {
   return prisma.session.update({ where: { id }, data: { revokedAt: new Date() } });
 }
 
+export async function findActiveSessionByFamilyId(familyId) {
+  return prisma.session.findFirst({ where: { familyId, revokedAt: null } });
+}
+
 export async function revokeSessionFamily(familyId) {
   return prisma.session.updateMany({
     where: { familyId, revokedAt: null },

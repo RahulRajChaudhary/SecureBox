@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 
 const REFRESH_TOKEN_BYTES = 32;
 export const REFRESH_TOKEN_EXPIRES_IN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+export const REFRESH_REUSE_GRACE_MS = 10 * 1000; // 10s: covers concurrent same-browser refreshes, not real theft
 export const REFRESH_COOKIE_NAME = 'refresh_token';
 
 export function signAccessToken(user) {

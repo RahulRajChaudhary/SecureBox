@@ -7,6 +7,7 @@ import {
   generateRefreshToken,
   hashRefreshToken,
   REFRESH_TOKEN_EXPIRES_IN_MS,
+  REFRESH_REUSE_GRACE_MS,
   REFRESH_COOKIE_NAME,
 } from '../../lib/tokens.js';
 import { verifyGoogleIdToken } from '../../lib/google.js';
@@ -85,6 +86,15 @@ export async function refresh(req, res) {
   }
 
   if (session.revokedAt) {
+    const withinGrace = Date.now() - session.revokedAt.getTime() < REFRESH_REUSE_GRACE_MS;
+    const current = withinGrace ? await authRepository.findActiveSessionByFamilyId(session.familyId) : null;
+
+    if (current && current.expiresAt > new Date()) {
+      const user = await authRepository.findUserById(current.userId);
+      const accessToken = signAccessToken(user);
+      return res.json({ accessToken });
+    }
+
     await authRepository.revokeSessionFamily(session.familyId);
     res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
     return res.status(401).json({ error: 'Refresh token reuse detected' });

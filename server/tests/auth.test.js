@@ -114,7 +114,7 @@ describe('POST /api/auth/refresh', () => {
     expect(res.headers['set-cookie'][0]).toMatch(/^refresh_token=/);
   });
 
-  it('rejects reuse of an already-rotated refresh token', async () => {
+  it('accepts reuse of a just-rotated refresh token within the grace window', async () => {
     const agent = request.agent(app);
     const regRes = await agent.post('/api/auth/register').send(credentials);
     const originalCookie = regRes.headers['set-cookie'];
@@ -123,16 +123,52 @@ describe('POST /api/auth/refresh', () => {
 
     const reuseRes = await request(app).post('/api/auth/refresh').set('Cookie', originalCookie);
 
+    expect(reuseRes.status).toBe(200);
+    expect(reuseRes.body.accessToken).toEqual(expect.any(String));
+  });
+
+  it('rejects reuse of a rotated refresh token outside the grace window', async () => {
+    const agent = request.agent(app);
+    const regRes = await agent.post('/api/auth/register').send(credentials);
+    const originalCookie = regRes.headers['set-cookie'];
+
+    await agent.post('/api/auth/refresh'); // rotates
+    await prisma.session.updateMany({
+      where: { revokedAt: { not: null } },
+      data: { revokedAt: new Date(Date.now() - 20_000) },
+    });
+
+    const reuseRes = await request(app).post('/api/auth/refresh').set('Cookie', originalCookie);
+
     expect(reuseRes.status).toBe(401);
   });
 
-  it('revokes the whole session family when a rotated token is reused', async () => {
+  it('lets two concurrent refreshes on the same pre-rotation token both succeed, leaving exactly one active session', async () => {
+    const agent = request.agent(app);
+    const regRes = await agent.post('/api/auth/register').send(credentials);
+    const originalCookie = regRes.headers['set-cookie'];
+    const { user } = regRes.body;
+
+    await agent.post('/api/auth/refresh'); // "winner" — rotates
+    const loserRes = await request(app).post('/api/auth/refresh').set('Cookie', originalCookie); // "loser" — same old cookie
+
+    expect(loserRes.status).toBe(200);
+
+    const activeSessions = await prisma.session.count({ where: { userId: user.id, revokedAt: null } });
+    expect(activeSessions).toBe(1);
+  });
+
+  it('revokes the whole session family when a rotated token is reused outside the grace window', async () => {
     const agent = request.agent(app);
     const regRes = await agent.post('/api/auth/register').send(credentials);
     const originalCookie = regRes.headers['set-cookie'];
 
     await agent.post('/api/auth/refresh'); // legitimate rotation -> cookie A
-    await request(app).post('/api/auth/refresh').set('Cookie', originalCookie); // reuse -> revokes family
+    await prisma.session.updateMany({
+      where: { revokedAt: { not: null } },
+      data: { revokedAt: new Date(Date.now() - 20_000) },
+    });
+    await request(app).post('/api/auth/refresh').set('Cookie', originalCookie); // reuse outside grace -> revokes family
 
     const res = await agent.post('/api/auth/refresh'); // cookie A should be dead too
 
