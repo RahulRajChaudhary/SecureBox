@@ -5,6 +5,10 @@ export function listFolders(parentId) {
   return apiRequest(`/api/folders${qs}`);
 }
 
+export function listFavoriteFolders() {
+  return apiRequest('/api/folders/favorites');
+}
+
 export function getFolder(folderId) {
   return apiRequest(`/api/folders/${folderId}`);
 }

@@ -8,6 +8,7 @@ function serializeFolder(folder) {
     parentId: folder.parentId,
     visibility: folder.visibility,
     shareSlug: folder.shareSlug,
+    isFavorite: folder.isFavorite,
     createdAt: folder.createdAt,
     updatedAt: folder.updatedAt,
     ...(folder.subfolderCount !== undefined && {
@@ -26,6 +27,11 @@ export async function create(req, res) {
 export async function list(req, res) {
   const query = listFoldersSchema.parse(req.query);
   const folders = await foldersService.listFolders({ userId: req.userId, parentId: query.parentId });
+  res.json({ data: folders.map(serializeFolder) });
+}
+
+export async function favorites(req, res) {
+  const folders = await foldersService.listFavoriteFolders({ userId: req.userId });
   res.json({ data: folders.map(serializeFolder) });
 }
 

@@ -72,11 +72,19 @@ export async function updateFolderVisibility({ userId, folderId, visibility }) {
   return foldersRepo.updateFolder(folderId, userId, { visibility, shareSlug });
 }
 
-export async function updateFolder({ userId, folderId, name, parentId, visibility }) {
+export async function updateFolder({ userId, folderId, name, parentId, visibility, isFavorite }) {
   if (visibility !== undefined) await updateFolderVisibility({ userId, folderId, visibility });
   if (parentId !== undefined) await moveFolder({ userId, folderId, parentId });
+  if (isFavorite !== undefined) {
+    const folder = await foldersRepo.updateFolder(folderId, userId, { isFavorite });
+    if (!folder) throw new NotFoundError();
+  }
   if (name !== undefined) return renameFolder({ userId, folderId, name });
   return foldersRepo.findOwnedFolder(folderId, userId);
+}
+
+export async function listFavoriteFolders({ userId }) {
+  return foldersRepo.listFavoriteFolders(userId);
 }
 
 export async function deleteFolder({ userId, folderId }) {

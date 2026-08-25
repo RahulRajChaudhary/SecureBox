@@ -1,7 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Play } from 'lucide-react';
 import { useResolvedUrl } from '../hooks/useResolvedUrl';
-import { getFileTypeStyle } from '../lib/fileTypeStyle';
+import { getFileTypeStyle, getFileExtensionLabel } from '../lib/fileTypeStyle';
+
+function TypeBadgeTile({ file }) {
+  const { Icon, color, tint, chipBg } = getFileTypeStyle(file.mimeType);
+  return (
+    <div className={`relative flex h-full w-full items-center justify-center ${tint}`}>
+      <Icon size={40} className={color} />
+      <span
+        className={`absolute bottom-2 right-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-bg ${chipBg}`}
+      >
+        {getFileExtensionLabel(file.originalName)}
+      </span>
+    </div>
+  );
+}
 
 // Grid-view thumbnail for images and videos. Images render the resolved
 // file URL directly; videos capture a frame client-side onto a canvas
@@ -10,7 +24,6 @@ import { getFileTypeStyle } from '../lib/fileTypeStyle';
 // (S3 response without permissive CORS) throws on toDataURL, which is
 // caught below rather than crashing the grid.
 export function FileThumbnail({ file }) {
-  const { Icon, color } = getFileTypeStyle(file.mimeType);
   const isImage = file.mimeType?.startsWith('image/');
   const isVideo = file.mimeType?.startsWith('video/');
   const { data: url } = useResolvedUrl(file.id, isImage || isVideo);
@@ -69,9 +82,7 @@ export function FileThumbnail({ file }) {
         {videoFrame ? (
           <img src={videoFrame} alt={file.originalName} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-surface2">
-            <Icon size={44} className={color} />
-          </div>
+          <TypeBadgeTile file={file} />
         )}
         <div className="absolute bottom-1 left-1 rounded bg-black/60 p-1">
           <Play size={12} className="fill-white text-white" />
@@ -80,9 +91,5 @@ export function FileThumbnail({ file }) {
     );
   }
 
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-surface2">
-      <Icon size={44} className={color} />
-    </div>
-  );
+  return <TypeBadgeTile file={file} />;
 }

@@ -20,7 +20,7 @@ function StoragePill({ usedBytes, limitBytes }) {
           <strong className="font-semibold text-ink">{formatBytes(usedBytes)}</strong> of {formatBytes(limitBytes)}{' '}
           used
         </span>
-        <div className="h-1 w-20 overflow-hidden rounded-full bg-surface2">
+        <div className="h-1 w-full overflow-hidden rounded-full bg-surface2">
           <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
@@ -35,10 +35,13 @@ export function Layout({ children, nav, onNavChange, activeFolderId, onOpenFolde
   return (
     <div className="flex h-screen flex-col bg-bg">
       <header className="relative z-30 flex shrink-0 items-center gap-4 border-b border-edge bg-surface/80 px-4 py-3 backdrop-blur">
-        <div className="flex shrink-0 items-center gap-2 font-mono text-sm font-semibold tracking-tight text-ink">
+        <button
+          onClick={() => onOpenFolder(null)}
+          className="flex shrink-0 items-center gap-2 font-mono text-sm font-semibold tracking-tight text-ink transition-opacity hover:opacity-80"
+        >
           <ShieldCheck size={18} className="text-accent" />
           SecureBox
-        </div>
+        </button>
         <div className="relative mx-auto w-full max-w-md">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input

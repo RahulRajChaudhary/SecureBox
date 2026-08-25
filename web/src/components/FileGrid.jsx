@@ -1,7 +1,10 @@
 import { AnimatePresence } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { useFileListing } from '../hooks/useFileListing';
 import { FileGridCard } from './FileGridCard';
+import { FolderGridCard } from './FolderGridCard';
 import { EmptyState } from './EmptyState';
+import { sortEntries } from '../lib/sortEntries';
 
 function SkeletonCard({ delay }) {
   return (
@@ -15,9 +18,15 @@ function SkeletonCard({ delay }) {
   );
 }
 
-export function FileGrid({ q, sort, folderId, view, emptyMessage }) {
+// Folders and files render in one shared grid, sorted together — a folder
+// isn't pinned first just for being a folder — instead of two separate
+// grids stacked with their own headers.
+export function FileGrid({
+  folders = [], onOpenFolder, q, sort, folderId, view, emptyMessage, filesEnabled = true,
+  selected, onToggleSelect, onSelectAll,
+}) {
   const { files, isLoading, isError, hasNextPage, isFetchingNextPage, sentinelRef } = useFileListing({
-    q, sort, folderId, view,
+    q, sort, folderId, view, enabled: filesEnabled,
   });
 
   if (isLoading)
@@ -29,18 +38,53 @@ export function FileGrid({ q, sort, folderId, view, emptyMessage }) {
       </div>
     );
   if (isError) return <p className="py-8 text-center text-sm text-red-400">Couldn't load files.</p>;
-  if (files.length === 0) return <EmptyState message={emptyMessage} />;
+
+  const total = folders.length + files.length;
+  if (total === 0) return <EmptyState message={emptyMessage} />;
+
+  const selectionActive = Boolean(selected?.size);
+  const allSelected = selectionActive && folders.every((f) => selected.has(`folder:${f.id}`)) && files.every((f) => selected.has(`file:${f.id}`));
 
   return (
     <div>
-      <p className="mb-2 text-xs text-muted">
-        {files.length} file{files.length !== 1 ? 's' : ''} loaded
-      </p>
+      <div className="mb-2 flex items-center gap-2">
+        {onSelectAll && selectionActive && (
+          <button
+            onClick={() => onSelectAll(folders, files)}
+            title={allSelected ? 'Deselect all' : 'Select all'}
+            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+              allSelected ? 'border-accent bg-accent text-bg' : 'border-edge text-transparent hover:border-accent/60'
+            }`}
+          >
+            <Check size={11} strokeWidth={3} />
+          </button>
+        )}
+        <p className="text-xs text-muted">
+          {selectionActive ? `${selected.size} selected` : `${total} item${total !== 1 ? 's' : ''}`}
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        <AnimatePresence initial={false}>
-          {files.map((file) => (
-            <FileGridCard key={file.id} file={file} />
-          ))}
+        <AnimatePresence initial={false} mode="popLayout">
+          {sortEntries(folders, files, sort).map((entry) =>
+            entry.type === 'folder' ? (
+              <FolderGridCard
+                key={`folder-${entry.folder.id}`}
+                folder={entry.folder}
+                onOpen={onOpenFolder}
+                selected={selected?.has(`folder:${entry.folder.id}`)}
+                selectionActive={selectionActive}
+                onToggleSelect={onToggleSelect}
+              />
+            ) : (
+              <FileGridCard
+                key={entry.file.id}
+                file={entry.file}
+                selected={selected?.has(`file:${entry.file.id}`)}
+                selectionActive={selectionActive}
+                onToggleSelect={onToggleSelect}
+              />
+            ),
+          )}
         </AnimatePresence>
       </div>
       {hasNextPage && (

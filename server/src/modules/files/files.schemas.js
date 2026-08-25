@@ -16,10 +16,12 @@ export const updateSchema = z
     name: z.string().min(1).max(255).optional(),
     visibility: z.enum(['PUBLIC', 'PRIVATE']).optional(),
     folderId: z.string().uuid().nullable().optional(),
+    isFavorite: z.boolean().optional(),
   })
-  .refine((data) => data.name || data.visibility || data.folderId !== undefined, {
-    message: 'Provide name, visibility, or folderId',
-  });
+  .refine(
+    (data) => data.name || data.visibility || data.folderId !== undefined || data.isFavorite !== undefined,
+    { message: 'Provide name, visibility, folderId, or isFavorite' },
+  );
 
 export const listSchema = z.object({
   cursor: z.string().optional(),
@@ -27,5 +29,5 @@ export const listSchema = z.object({
   q: z.string().optional(),
   sort: z.enum(['createdAt_desc', 'createdAt_asc', 'name_asc', 'name_desc']).default('createdAt_desc'),
   folderId: z.string().uuid().optional(),
-  view: z.enum(['recent', 'shared']).optional(),
+  view: z.enum(['recent', 'shared', 'favorites']).optional(),
 });

@@ -12,7 +12,9 @@ function serializeFile(file) {
     visibility: file.visibility,
     shareSlug: file.shareSlug,
     folderId: file.folderId,
+    isFavorite: file.isFavorite,
     createdAt: file.createdAt,
+    updatedAt: file.updatedAt,
   };
 }
 

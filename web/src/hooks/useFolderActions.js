@@ -38,6 +38,13 @@ export function useFolderActions(folder) {
     );
   }
 
+  function toggleFavorite() {
+    updateFolder.mutate(
+      { folderId: folder.id, patch: { isFavorite: !folder.isFavorite } },
+      { onError: () => toast.error('Could not update favorite') },
+    );
+  }
+
   function handleRename(name) {
     updateFolder.mutate(
       { folderId: folder.id, patch: { name } },
@@ -66,6 +73,6 @@ export function useFolderActions(folder) {
     isPublic,
     isUpdating: updateFolder.isPending,
     isDeleting: deleteFolder.isPending,
-    toggleVisibility, handleRename, handleDelete,
+    toggleVisibility, toggleFavorite, handleRename, handleDelete,
   };
 }

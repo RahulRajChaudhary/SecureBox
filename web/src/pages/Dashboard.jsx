@@ -7,24 +7,26 @@ import { Layout } from '../components/Layout';
 import { UploadQueue } from '../components/UploadQueue';
 import { FileList } from '../components/FileList';
 import { FileGrid } from '../components/FileGrid';
-import { FolderList } from '../components/FolderList';
-import { RecentStrip } from '../components/RecentStrip';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { NewFolderModal } from '../components/NewFolderModal';
 import { TrashList } from '../components/TrashList';
 import { ViewToggle } from '../components/ViewToggle';
 import { DropOverlay } from '../components/DropOverlay';
-import { useCreateFolder } from '../hooks/useFolders';
+import { BulkActionBar } from '../components/BulkActionBar';
+import { BulkMoveModal } from '../components/BulkMoveModal';
+import { DeleteConfirm } from '../components/DeleteConfirm';
+import { useCreateFolder, useFolders, useFavoriteFolders, useDeleteFolder } from '../hooks/useFolders';
 import { useUploadFiles } from '../hooks/useUploadFiles';
-import { useStats } from '../hooks/useFiles';
+import { useStats, useDeleteFile } from '../hooks/useFiles';
 import { DashboardStats } from '../components/DashboardStats';
 import { StorageBreakdown } from '../components/StorageBreakdown';
 
 const VIEW_MODE_KEY = 'securebox:viewMode';
-const NAV_TITLES = { recent: 'Recent', shared: 'Shared' };
+const NAV_TITLES = { recent: 'Recent', shared: 'Shared', favorites: 'Favorites' };
 const NAV_EMPTY_MESSAGES = {
   recent: 'Nothing here yet — recently used files show up here.',
   shared: "Files you've shared publicly will show up here.",
+  favorites: "Files and folders you've starred show up here.",
 };
 
 function StatsView({ stats, isLoading }) {
@@ -49,14 +51,19 @@ function readViewMode() {
 export function Dashboard() {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('createdAt_desc');
-  const [nav, setNav] = useState('files'); // 'files' | 'recent' | 'shared' | 'stats' | 'trash'
+  const [nav, setNav] = useState('files'); // 'files' | 'recent' | 'shared' | 'favorites' | 'stats' | 'trash'
   const { folderId: folderIdParam } = useParams();
   const navigate = useNavigate();
   const folderId = folderIdParam ?? null;
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [viewMode, setViewMode] = useState(readViewMode);
   const [filesFilter, setFilesFilter] = useState('all'); // 'all' | 'folders' — only meaningful for nav === 'files'
+  const [selected, setSelected] = useState(new Set()); // Set of "file:<id>" | "folder:<id>"
+  const [bulkMoving, setBulkMoving] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const createFolder = useCreateFolder();
+  const deleteFile = useDeleteFile();
+  const deleteFolder = useDeleteFolder();
   const { data: stats, isLoading: statsLoading } = useStats({ enabled: nav === 'stats' });
   const uploadInputRef = useRef(null);
 
@@ -70,12 +77,14 @@ export function Dashboard() {
   function handleNavChange(next) {
     setNav(next);
     setQ('');
+    setSelected(new Set());
     if (next === 'files') navigate('/dashboard');
   }
 
   function handleOpenFolder(id) {
     setNav('files');
     setQ('');
+    setSelected(new Set());
     navigate(id ? `/dashboard/folder/${id}` : '/dashboard');
   }
 
@@ -89,15 +98,63 @@ export function Dashboard() {
     );
   }
 
-  const showFilesFilter = nav === 'files' || nav === 'recent';
+  function toggleSelect(type, id) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const key = `${type}:${id}`;
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function handleSelectAll(currentFolders, currentFiles) {
+    const keys = [...currentFolders.map((f) => `folder:${f.id}`), ...currentFiles.map((f) => `file:${f.id}`)];
+    const allSelected = keys.length > 0 && keys.every((k) => selected.has(k));
+    setSelected(allSelected ? new Set() : new Set(keys));
+  }
+
+  const selectedEntries = [...selected].map((key) => {
+    const [type, id] = key.split(':');
+    return { type, id };
+  });
+
+  async function handleBulkDelete() {
+    const results = await Promise.allSettled(
+      selectedEntries.map((e) => (e.type === 'file' ? deleteFile.mutateAsync(e.id) : deleteFolder.mutateAsync(e.id))),
+    );
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    const succeeded = results.length - failed;
+    if (succeeded) toast.success(`Deleted ${succeeded} item${succeeded !== 1 ? 's' : ''}`);
+    if (failed) toast.error(`${failed} item${failed !== 1 ? 's' : ''} could not be deleted`);
+    setSelected(new Set());
+    setBulkDeleting(false);
+  }
+
+  const showFilesFilter = nav === 'files' || nav === 'recent' || nav === 'favorites';
   const isFoldersOnly = showFilesFilter && filesFilter === 'folders';
 
+  // Folders never come from search — like Drive, search only matches file
+  // names — so they're hidden while searching unless "Folders" is selected,
+  // which always shows the full folder set regardless of q.
+  const showFolders = (nav === 'files' || nav === 'favorites') && (!q || isFoldersOnly);
+  const { data: folderList } = useFolders(folderId, { enabled: nav === 'files' });
+  const { data: favoriteFolderList } = useFavoriteFolders({ enabled: nav === 'favorites' });
+  const rawFolders = nav === 'files' ? (folderList?.data ?? []) : nav === 'favorites' ? (favoriteFolderList?.data ?? []) : [];
+  const folders = showFolders ? rawFolders : [];
+
   const listProps = {
+    folders,
+    onOpenFolder: handleOpenFolder,
+    filesEnabled: !isFoldersOnly,
     q,
     sort,
     folderId: nav === 'files' ? folderId : undefined,
-    view: nav === 'recent' ? 'recent' : nav === 'shared' ? 'shared' : undefined,
+    view: nav === 'recent' ? 'recent' : nav === 'shared' ? 'shared' : nav === 'favorites' ? 'favorites' : undefined,
     emptyMessage: q ? 'No files match your search.' : (NAV_EMPTY_MESSAGES[nav] ?? (folderId ? 'This folder is empty.' : undefined)),
+    selected,
+    onToggleSelect: toggleSelect,
+    onSelectAll: handleSelectAll,
   };
 
   return (
@@ -119,36 +176,43 @@ export function Dashboard() {
             <StatsView stats={stats} isLoading={statsLoading} />
           ) : (
             <>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => uploadInputRef.current?.click()}
-                  className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-bg transition-colors hover:bg-accent-dim"
-                >
-                  <Upload size={14} />
-                  Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCreatingFolder(true)}
-                  className="flex items-center gap-1.5 rounded-md border border-edge bg-surface px-3 py-1.5 text-sm text-ink transition-colors hover:bg-surface2"
-                >
-                  <FolderPlus size={14} />
-                  New folder
-                </button>
-                <input
-                  ref={uploadInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files.length) uploadFiles(e.target.files);
-                    e.target.value = '';
-                  }}
+              {selected.size > 0 ? (
+                <BulkActionBar
+                  count={selected.size}
+                  onMove={() => setBulkMoving(true)}
+                  onDelete={() => setBulkDeleting(true)}
+                  onClear={() => setSelected(new Set())}
                 />
-              </div>
-
-              {nav === 'files' && !folderId && !q && !isFoldersOnly && <RecentStrip />}
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => uploadInputRef.current?.click()}
+                    className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-bg transition-colors hover:bg-accent-dim"
+                  >
+                    <Upload size={14} />
+                    Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreatingFolder(true)}
+                    className="flex items-center gap-1.5 rounded-md border border-edge bg-surface px-3 py-1.5 text-sm text-ink transition-colors hover:bg-surface2"
+                  >
+                    <FolderPlus size={14} />
+                    New folder
+                  </button>
+                  <input
+                    ref={uploadInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files.length) uploadFiles(e.target.files);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+              )}
 
               <div className="flex items-center justify-between gap-3">
                 {nav === 'files' ? (
@@ -196,18 +260,15 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {nav === 'files' && (!q || isFoldersOnly) && (
-                <FolderList parentId={folderId} onOpen={handleOpenFolder} viewMode={viewMode} sort={sort} />
-              )}
-
-              {nav === 'recent' && isFoldersOnly && (
+              {nav === 'recent' && isFoldersOnly ? (
                 <p className="py-8 text-center text-sm text-muted">
                   Recent only tracks files — folders don't show up here.
                 </p>
+              ) : viewMode === 'grid' ? (
+                <FileGrid {...listProps} />
+              ) : (
+                <FileList {...listProps} />
               )}
-
-              {!isFoldersOnly &&
-                (viewMode === 'grid' ? <FileGrid {...listProps} /> : <FileList {...listProps} />)}
             </>
           )}
 
@@ -217,6 +278,16 @@ export function Dashboard() {
                 onSave={handleCreateFolder}
                 onClose={() => setCreatingFolder(false)}
                 saving={createFolder.isPending}
+              />
+            )}
+            {bulkMoving && <BulkMoveModal entries={selectedEntries} onClose={() => setBulkMoving(false)} />}
+            {bulkDeleting && (
+              <DeleteConfirm
+                title="Delete items"
+                message={`Delete ${selected.size} item${selected.size !== 1 ? 's' : ''}? This can't be undone.`}
+                onConfirm={handleBulkDelete}
+                onClose={() => setBulkDeleting(false)}
+                deleting={deleteFile.isPending || deleteFolder.isPending}
               />
             )}
           </AnimatePresence>

@@ -23,6 +23,7 @@ export async function findFileBySlug(shareSlug) {
 export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'createdAt_desc', folderId, view } = {}) {
   const isRecent = view === 'recent';
   const isShared = view === 'shared';
+  const isFavorites = view === 'favorites';
   const [sortField, sortDir] = isRecent
     ? ['updatedAt', 'desc']
     : sort.startsWith('name_')
@@ -35,12 +36,13 @@ export async function listOwnedFiles(ownerId, { cursor, limit = 20, q, sort = 'c
     deletedAt: null,
     status: 'READY',
     ...(isShared ? { visibility: 'PUBLIC' } : {}),
-    // Search, "recent", and "shared" all span the whole drive, like Google
-    // Drive's search and Recent views — otherwise the listing is scoped to
-    // the current folder (null = root).
+    ...(isFavorites ? { isFavorite: true } : {}),
+    // Search, "recent", "shared", and "favorites" all span the whole drive,
+    // like Google Drive's search and Recent views — otherwise the listing
+    // is scoped to the current folder (null = root).
     ...(q
       ? { originalName: { contains: q, mode: 'insensitive' } }
-      : isRecent || isShared
+      : isRecent || isShared || isFavorites
         ? {}
         : { folderId: folderId ?? null }),
   };

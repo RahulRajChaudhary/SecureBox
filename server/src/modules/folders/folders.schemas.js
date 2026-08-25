@@ -14,8 +14,13 @@ export const updateFolderSchema = z
     name: z.string().min(1).max(255).optional(),
     parentId: z.string().uuid().nullable().optional(),
     visibility: z.enum(['PUBLIC', 'PRIVATE']).optional(),
+    isFavorite: z.boolean().optional(),
   })
   .refine(
-    (data) => data.name !== undefined || data.parentId !== undefined || data.visibility !== undefined,
-    { message: 'Provide name, parentId, or visibility' },
+    (data) =>
+      data.name !== undefined ||
+      data.parentId !== undefined ||
+      data.visibility !== undefined ||
+      data.isFavorite !== undefined,
+    { message: 'Provide name, parentId, visibility, or isFavorite' },
   );

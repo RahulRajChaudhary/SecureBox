@@ -22,6 +22,15 @@ export async function listOwnedFolders(ownerId, parentId = null) {
   });
 }
 
+// Whole-drive, like listOwnedFiles' recent/shared/favorites views — not
+// scoped to a parent folder.
+export async function listFavoriteFolders(ownerId) {
+  return prisma.folder.findMany({
+    where: { ownerId, isFavorite: true },
+    orderBy: [{ name: 'asc' }],
+  });
+}
+
 export async function updateFolder(folderId, ownerId, data) {
   const { count } = await prisma.folder.updateMany({
     where: { id: folderId, ownerId },

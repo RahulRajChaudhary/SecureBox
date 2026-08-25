@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LogOut, Upload } from 'lucide-react';
+import { ChevronDown, LogOut, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAvatarUploadUrl, confirmAvatar } from '../lib/auth';
 import { scaleIn, quick } from '../lib/motion';
@@ -69,9 +69,13 @@ export function ProfileMenu({ user, logout, refreshUser }) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-accent/15 text-sm font-semibold text-accent transition-opacity hover:opacity-80"
+        className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-surface2"
       >
-        {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : initial}
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent/15 text-sm font-semibold text-accent">
+          {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : initial}
+        </span>
+        <span className="hidden max-w-[10rem] truncate font-mono text-sm text-ink sm:inline">{user?.email}</span>
+        <ChevronDown size={14} className="hidden shrink-0 text-muted sm:inline" />
       </button>
 
       <AnimatePresence>

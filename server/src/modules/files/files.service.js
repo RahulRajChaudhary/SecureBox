@@ -176,9 +176,13 @@ export async function moveFile({ fileId, userId, folderId }) {
   return filesRepo.updateFile(fileId, userId, { folderId: folderId ?? null });
 }
 
-export async function updateFile({ fileId, userId, name, visibility, folderId }) {
+export async function updateFile({ fileId, userId, name, visibility, folderId, isFavorite }) {
   if (visibility) await updateFileVisibility({ fileId, userId, visibility });
   if (folderId !== undefined) await moveFile({ fileId, userId, folderId });
+  if (isFavorite !== undefined) {
+    const file = await filesRepo.updateFile(fileId, userId, { isFavorite });
+    if (!file) throw new NotFoundError();
+  }
   if (name) return renameFile({ fileId, userId, name });
   return filesRepo.findOwnedFile(fileId, userId);
 }

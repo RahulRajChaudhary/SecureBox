@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
 
-export function InfoModal({ title, rows, onClose }) {
+export function InfoModal({ title, icon, rows, onClose }) {
   return (
     <motion.div
       variants={backdropFade}
@@ -18,6 +18,9 @@ export function InfoModal({ title, rows, onClose }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-lg border border-edge bg-surface p-5 shadow-2xl"
       >
+        {icon && (
+          <div className="mb-3 flex items-center justify-center rounded-md bg-surface2 py-6">{icon}</div>
+        )}
         <h2 className="mb-3 truncate text-sm font-semibold text-ink">{title}</h2>
         <dl className="flex flex-col gap-2">
           {rows.map(([label, value]) => (

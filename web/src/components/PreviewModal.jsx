@@ -1,8 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FileQuestion, X } from 'lucide-react';
+import { FileQuestion, Globe, Star, X } from 'lucide-react';
 import { getZipContents } from '../lib/files';
 import { backdropFade, scaleIn, quick } from '../lib/motion';
+import { formatBytes, formatDate } from '../lib/format';
+import { locationLabel } from '../lib/locationLabel';
+import { useFolder } from '../hooks/useFolders';
 import { ZipTree } from './ZipTree';
 import { useResolvedUrl } from '../hooks/useResolvedUrl';
 
@@ -85,6 +88,36 @@ function ZipPreview({ fileId }) {
   );
 }
 
+function PreviewInfo({ file }) {
+  const { data } = useFolder(file.folderId);
+  const crumbs = data?.data?.breadcrumb ?? [];
+
+  const rows = [
+    ['Type', file.mimeType || 'Unknown'],
+    ['Size', formatBytes(file.sizeBytes)],
+    ['Location', locationLabel(file.folderId, crumbs)],
+    ['Created', formatDate(file.createdAt)],
+    ['Modified', formatDate(file.updatedAt)],
+  ];
+
+  return (
+    <div className="mt-4 shrink-0 border-t border-edge pt-4">
+      <div className="mb-2 flex items-center gap-2">
+        {file.isFavorite && <Star size={13} className="fill-warn text-warn" title="Favorite" />}
+        {file.visibility === 'PUBLIC' && <Globe size={13} className="text-warn" title="Public" />}
+      </div>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+        {rows.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-muted">{label}</dt>
+            <dd className="truncate font-mono text-ink">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 export function PreviewModal({ file, onClose }) {
   const kind = getPreviewKind(file.mimeType);
 
@@ -126,6 +159,8 @@ export function PreviewModal({ file, onClose }) {
               <p className="text-sm">No preview available — download to view.</p>
             </div>
           )}
+
+          <PreviewInfo file={file} />
         </div>
       </motion.div>
     </motion.div>

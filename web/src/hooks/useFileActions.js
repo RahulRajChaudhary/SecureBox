@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { downloadFile } from '../lib/files';
-import { getFileIcon } from '../lib/fileIcon';
+import { getFileTypeStyle } from '../lib/fileTypeStyle';
 import { useUpdateFile, useDeleteFile } from './useFiles';
 
 export function useFileActions(file) {
@@ -17,7 +17,7 @@ export function useFileActions(file) {
   const deleteFile = useDeleteFile();
 
   const isPublic = file.visibility === 'PUBLIC';
-  const Icon = getFileIcon(file.mimeType);
+  const { Icon, color: iconColor } = getFileTypeStyle(file.mimeType);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -50,6 +50,13 @@ export function useFileActions(file) {
     );
   }
 
+  function toggleFavorite() {
+    updateFile.mutate(
+      { fileId: file.id, patch: { isFavorite: !file.isFavorite } },
+      { onError: () => toast.error('Could not update favorite') },
+    );
+  }
+
   function handleRename(name) {
     updateFile.mutate(
       { fileId: file.id, patch: { name } },
@@ -75,9 +82,9 @@ export function useFileActions(file) {
     moving, setMoving,
     viewingInfo, setViewingInfo,
     sharing, setSharing,
-    isPublic, Icon,
+    isPublic, Icon, iconColor,
     isUpdating: updateFile.isPending,
     isDeleting: deleteFile.isPending,
-    handleDownload, toggleVisibility, handleRename, handleDelete,
+    handleDownload, toggleVisibility, toggleFavorite, handleRename, handleDelete,
   };
 }

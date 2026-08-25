@@ -65,6 +65,7 @@ model File {
   checksum      String?
   folderId      String?
   folder        Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  isFavorite    Boolean    @default(false)
   deletedAt     DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -72,6 +73,7 @@ model File {
   @@index([ownerId, status, createdAt(sort: Desc)])
   @@index([ownerId, deletedAt])
   @@index([ownerId, folderId, status, createdAt(sort: Desc)])
+  @@index([ownerId, isFavorite])
 }
 
 model Folder {
@@ -85,8 +87,10 @@ model Folder {
   files      File[]
   visibility Visibility @default(PRIVATE)
   shareSlug  String?    @unique
+  isFavorite Boolean    @default(false)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
   @@index([ownerId, parentId])
+  @@index([ownerId, isFavorite])
 }
