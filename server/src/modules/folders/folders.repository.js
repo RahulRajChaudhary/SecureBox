@@ -15,9 +15,14 @@ export async function findFolderBySlug(shareSlug) {
   return prisma.folder.findFirst({ where: { shareSlug } });
 }
 
-export async function listOwnedFolders(ownerId, parentId = null) {
+export async function listOwnedFolders(ownerId, parentId = null, q) {
   return prisma.folder.findMany({
-    where: { ownerId, parentId },
+    where: {
+      ownerId,
+      // Search spans the whole drive, like listOwnedFiles does for q —
+      // otherwise the listing is scoped to parentId (null = root).
+      ...(q ? { name: { contains: q, mode: 'insensitive' } } : { parentId }),
+    },
     orderBy: [{ name: 'asc' }],
   });
 }

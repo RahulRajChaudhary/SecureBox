@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HardDrive, Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -28,9 +29,22 @@ function StoragePill({ usedBytes, limitBytes }) {
   );
 }
 
-export function Layout({ children, nav, onNavChange, activeFolderId, onOpenFolder, q, onQChange, onNewFolder, onUploadFiles }) {
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform ?? navigator.userAgent);
+
+export function Layout({ children, nav, onNavChange, activeFolderId, onOpenFolder, q, onQChange, onNewFolder, onUploadFiles, onOpenSearch }) {
   const { user, logout, refreshUser } = useAuth();
   const { data: usage } = useUsage();
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        onOpenSearch?.();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onOpenSearch]);
 
   return (
     <div className="flex h-screen flex-col bg-bg">
@@ -47,9 +61,14 @@ export function Layout({ children, nav, onNavChange, activeFolderId, onOpenFolde
           <input
             value={q}
             onChange={(e) => onQChange(e.target.value)}
-            placeholder="Search files…"
-            className="w-full rounded-full border border-edge bg-bg py-1.5 pl-9 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
+            placeholder="Search files and folders…"
+            className="w-full rounded-full border border-edge bg-bg py-1.5 pl-9 pr-16 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
           />
+          {!q && (
+            <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-edge bg-surface px-1.5 py-0.5 font-mono text-[11px] text-muted">
+              {isMac ? '⌘K' : 'Ctrl K'}
+            </kbd>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <StoragePill usedBytes={usage?.data?.usedBytes} limitBytes={usage?.data?.limitBytes} />

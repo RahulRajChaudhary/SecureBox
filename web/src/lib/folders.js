@@ -1,7 +1,10 @@
 import { apiRequest } from './api';
 
-export function listFolders(parentId) {
-  const qs = parentId ? `?parentId=${parentId}` : '';
+export function listFolders(parentId, q) {
+  const params = new URLSearchParams();
+  if (parentId) params.set('parentId', parentId);
+  if (q) params.set('q', q);
+  const qs = params.toString() ? `?${params.toString()}` : '';
   return apiRequest(`/api/folders${qs}`);
 }
 

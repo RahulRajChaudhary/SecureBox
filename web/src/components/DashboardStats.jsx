@@ -1,5 +1,7 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { Files, HardDrive, Globe, UploadCloud } from 'lucide-react';
 import { formatBytes, usagePercent } from '../lib/format';
+import { backdropFade, quick } from '../lib/motion';
 
 function SkeletonTile({ delay }) {
   return (
@@ -27,34 +29,48 @@ function StatTile({ icon: Icon, label, value, sub }) {
 }
 
 export function DashboardStats({ stats, isLoading }) {
-  if (isLoading || !stats) {
-    return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <SkeletonTile key={i} delay={i * 80} />
-        ))}
-      </div>
-    );
-  }
-
-  const pct = usagePercent(stats.usedBytes, stats.limitBytes);
-
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <StatTile icon={Files} label="Total files" value={stats.totalFiles} />
-      <StatTile
-        icon={HardDrive}
-        label="Storage used"
-        value={formatBytes(stats.usedBytes)}
-        sub={`${pct.toFixed(0)}% of ${formatBytes(stats.limitBytes)}`}
-      />
-      <StatTile
-        icon={Globe}
-        label="Public links"
-        value={stats.publicFileCount}
-        sub={stats.publicFileCount === 1 ? 'file shared via link' : 'files shared via link'}
-      />
-      <StatTile icon={UploadCloud} label="Uploaded" value={stats.recentUploadCount} sub="in the last 7 days" />
-    </div>
+    <AnimatePresence mode="wait" initial={false}>
+      {isLoading || !stats ? (
+        <motion.div
+          key="loading"
+          variants={backdropFade}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={quick}
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+        >
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonTile key={i} delay={i * 80} />
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div
+          key="content"
+          variants={backdropFade}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={quick}
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+        >
+          <StatTile icon={Files} label="Total files" value={stats.totalFiles} />
+          <StatTile
+            icon={HardDrive}
+            label="Storage used"
+            value={formatBytes(stats.usedBytes)}
+            sub={`${usagePercent(stats.usedBytes, stats.limitBytes).toFixed(0)}% of ${formatBytes(stats.limitBytes)}`}
+          />
+          <StatTile
+            icon={Globe}
+            label="Public links"
+            value={stats.publicFileCount}
+            sub={stats.publicFileCount === 1 ? 'file shared via link' : 'files shared via link'}
+          />
+          <StatTile icon={UploadCloud} label="Uploaded" value={stats.recentUploadCount} sub="in the last 7 days" />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

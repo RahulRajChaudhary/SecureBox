@@ -10,12 +10,12 @@ export async function createFolder({ userId, name, parentId }) {
   return foldersRepo.createFolder({ ownerId: userId, name, parentId: parentId ?? null });
 }
 
-export async function listFolders({ userId, parentId }) {
+export async function listFolders({ userId, parentId, q }) {
   if (parentId) {
     const parent = await foldersRepo.findOwnedFolder(parentId, userId);
     if (!parent) throw new NotFoundError('Folder not found');
   }
-  const folders = await foldersRepo.listOwnedFolders(userId, parentId ?? null);
+  const folders = await foldersRepo.listOwnedFolders(userId, parentId ?? null, q);
   const counts = await Promise.all(
     folders.map((folder) => foldersRepo.countDirectChildrenBreakdown(folder.id, userId)),
   );

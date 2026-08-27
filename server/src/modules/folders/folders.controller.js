@@ -26,7 +26,7 @@ export async function create(req, res) {
 
 export async function list(req, res) {
   const query = listFoldersSchema.parse(req.query);
-  const folders = await foldersService.listFolders({ userId: req.userId, parentId: query.parentId });
+  const folders = await foldersService.listFolders({ userId: req.userId, parentId: query.parentId, q: query.q });
   res.json({ data: folders.map(serializeFolder) });
 }
 

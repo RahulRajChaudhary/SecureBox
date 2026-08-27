@@ -79,6 +79,44 @@ describe('GET /api/folders', () => {
   });
 });
 
+describe('GET /api/folders?q=', () => {
+  it('matches folder names by case-insensitive substring', async () => {
+    const token = await registerUser();
+    await createFolder(token, { name: 'Invoices' });
+    await createFolder(token, { name: 'Photos' });
+
+    const res = await request(app).get('/api/folders?q=VOIC').set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((f) => f.name)).toEqual(['Invoices']);
+  });
+
+  it('ignores parentId scoping and finds nested folders from root', async () => {
+    const token = await registerUser();
+    const root = await createFolder(token, { name: 'Photos' });
+    await createFolder(token, { name: 'Vacation 2026', parentId: root.body.data.id });
+
+    const res = await request(app).get('/api/folders?q=vacation').set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((f) => f.name)).toEqual(['Vacation 2026']);
+  });
+
+  it('q and parentId together still search whole-drive, not just the parentId scope', async () => {
+    const token = await registerUser();
+    const root = await createFolder(token, { name: 'Photos' });
+    const nested = await createFolder(token, { name: 'Vacation 2026', parentId: root.body.data.id });
+    const other = await createFolder(token, { name: 'Docs' });
+
+    const res = await request(app)
+      .get(`/api/folders?q=vacation&parentId=${other.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((f) => f.id)).toEqual([nested.body.data.id]);
+  });
+});
+
 describe('GET /api/folders/:id', () => {
   it('returns a root-first breadcrumb', async () => {
     const token = await registerUser();

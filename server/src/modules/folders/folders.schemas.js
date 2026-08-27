@@ -7,6 +7,7 @@ export const createFolderSchema = z.object({
 
 export const listFoldersSchema = z.object({
   parentId: z.string().uuid().optional(),
+  q: z.string().optional(),
 });
 
 export const updateFolderSchema = z

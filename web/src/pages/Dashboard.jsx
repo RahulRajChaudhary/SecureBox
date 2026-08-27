@@ -15,6 +15,8 @@ import { DropOverlay } from '../components/DropOverlay';
 import { BulkActionBar } from '../components/BulkActionBar';
 import { BulkMoveModal } from '../components/BulkMoveModal';
 import { DeleteConfirm } from '../components/DeleteConfirm';
+import { SearchDialog } from '../components/SearchDialog';
+import { PreviewModal } from '../components/PreviewModal';
 import { useCreateFolder, useFolders, useFavoriteFolders, useDeleteFolder } from '../hooks/useFolders';
 import { useUploadFiles } from '../hooks/useUploadFiles';
 import { useStats, useDeleteFile } from '../hooks/useFiles';
@@ -61,6 +63,8 @@ export function Dashboard() {
   const [selected, setSelected] = useState(new Set()); // Set of "file:<id>" | "folder:<id>"
   const [bulkMoving, setBulkMoving] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
   const createFolder = useCreateFolder();
   const deleteFile = useDeleteFile();
   const deleteFolder = useDeleteFolder();
@@ -86,6 +90,16 @@ export function Dashboard() {
     setQ('');
     setSelected(new Set());
     navigate(id ? `/dashboard/folder/${id}` : '/dashboard');
+  }
+
+  function handleSearchSelect(entry) {
+    setSearchDialogOpen(false);
+    if (entry.type === 'folder') {
+      handleOpenFolder(entry.folder.id);
+    } else {
+      handleOpenFolder(entry.file.folderId);
+      setPreviewFile(entry.file);
+    }
   }
 
   function handleCreateFolder(name) {
@@ -134,11 +148,12 @@ export function Dashboard() {
   const showFilesFilter = nav === 'files' || nav === 'recent' || nav === 'favorites';
   const isFoldersOnly = showFilesFilter && filesFilter === 'folders';
 
-  // Folders never come from search — like Drive, search only matches file
-  // names — so they're hidden while searching unless "Folders" is selected,
-  // which always shows the full folder set regardless of q.
-  const showFolders = (nav === 'files' || nav === 'favorites') && (!q || isFoldersOnly);
-  const { data: folderList } = useFolders(folderId, { enabled: nav === 'files' });
+  // Folder search mirrors file search: whole-drive, case-insensitive
+  // substring match on name, regardless of the currently open folder. The
+  // backend does the filtering (via q), so folders show for nav === 'files'
+  // whether or not q is set.
+  const showFolders = nav === 'files' || nav === 'favorites';
+  const { data: folderList } = useFolders(folderId, { q, enabled: nav === 'files' });
   const { data: favoriteFolderList } = useFavoriteFolders({ enabled: nav === 'favorites' });
   const rawFolders = nav === 'files' ? (folderList?.data ?? []) : nav === 'favorites' ? (favoriteFolderList?.data ?? []) : [];
   const folders = showFolders ? rawFolders : [];
@@ -151,7 +166,7 @@ export function Dashboard() {
     sort,
     folderId: nav === 'files' ? folderId : undefined,
     view: nav === 'recent' ? 'recent' : nav === 'shared' ? 'shared' : nav === 'favorites' ? 'favorites' : undefined,
-    emptyMessage: q ? 'No files match your search.' : (NAV_EMPTY_MESSAGES[nav] ?? (folderId ? 'This folder is empty.' : undefined)),
+    emptyMessage: q ? 'Nothing matches your search.' : (NAV_EMPTY_MESSAGES[nav] ?? (folderId ? 'This folder is empty.' : undefined)),
     selected,
     onToggleSelect: toggleSelect,
     onSelectAll: handleSelectAll,
@@ -167,6 +182,7 @@ export function Dashboard() {
       onQChange={setQ}
       onNewFolder={() => setCreatingFolder(true)}
       onUploadFiles={uploadFiles}
+      onOpenSearch={() => setSearchDialogOpen(true)}
     >
       <DropOverlay onDrop={uploadFiles}>
         <div className="flex flex-col gap-6">
@@ -290,6 +306,10 @@ export function Dashboard() {
                 deleting={deleteFile.isPending || deleteFolder.isPending}
               />
             )}
+            {searchDialogOpen && (
+              <SearchDialog onClose={() => setSearchDialogOpen(false)} onSelect={handleSearchSelect} />
+            )}
+            {previewFile && <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
           </AnimatePresence>
         </div>
       </DropOverlay>
