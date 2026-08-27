@@ -15,6 +15,7 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -32,18 +33,21 @@ export function Login() {
 
   async function handleGoogleCredential(credential) {
     setError(null);
+    setGoogleSubmitting(true);
     try {
       await loginWithGoogle(credential);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setGoogleSubmitting(false);
     }
   }
 
   return (
     <AuthLayout>
       <div className="mb-4 flex w-full max-w-sm flex-col items-center gap-3">
-        <GoogleSignInButton onCredential={handleGoogleCredential} />
+        <GoogleSignInButton onCredential={handleGoogleCredential} loading={googleSubmitting} />
         <div className="flex w-full items-center gap-2 text-xs text-muted">
           <div className="h-px flex-1 bg-edge" />
           or
