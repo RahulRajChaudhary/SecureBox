@@ -14,7 +14,6 @@ export function GoogleSignInButton({ onCredential }) {
     google.accounts.id.renderButton(buttonRef.current, {
       theme: 'outline',
       size: 'large',
-      width: 320,
     });
   }, [onCredential]);
 
